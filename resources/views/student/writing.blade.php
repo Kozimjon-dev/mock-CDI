@@ -267,18 +267,27 @@ function initializeTaskNavigation() {
 
 function showTask(task) {
     // Hide all tasks
-    document.querySelectorAll('.task-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.task-content').forEach(el => {
+        el.classList.add('hidden');
+    });
     
     // Show selected task
-    document.querySelector(`[data-task="${task}"]`).classList.remove('hidden');
+    const targetTask = document.querySelector(`.task-content[data-task="${task}"]`);
+    if (targetTask) {
+        targetTask.classList.remove('hidden');
+    }
     
-    // Update navigation
+    // Update navigation buttons
     document.querySelectorAll('.task-nav').forEach(btn => {
         btn.classList.remove('bg-indigo-600', 'text-white');
         btn.classList.add('bg-gray-200', 'text-gray-700');
     });
-    document.querySelector(`[data-task="${task}"]`).classList.remove('bg-gray-200', 'text-gray-700');
-    document.querySelector(`[data-task="${task}"]`).classList.add('bg-indigo-600', 'text-white');
+    
+    const targetNav = document.querySelector(`.task-nav[data-task="${task}"]`);
+    if (targetNav) {
+        targetNav.classList.remove('bg-gray-200', 'text-gray-700');
+        targetNav.classList.add('bg-indigo-600', 'text-white');
+    }
     
     // Update current task display
     currentTask = task;

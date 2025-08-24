@@ -261,18 +261,27 @@ function initializePassageNavigation() {
 
 function showPassage(passage) {
     // Hide all passages
-    document.querySelectorAll('.passage-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.passage-content').forEach(el => {
+        el.classList.add('hidden');
+    });
     
     // Show selected passage
-    document.querySelector(`[data-passage="${passage}"]`).classList.remove('hidden');
+    const targetPassage = document.querySelector(`.passage-content[data-passage="${passage}"]`);
+    if (targetPassage) {
+        targetPassage.classList.remove('hidden');
+    }
     
-    // Update navigation
+    // Update navigation buttons
     document.querySelectorAll('.passage-nav').forEach(btn => {
         btn.classList.remove('bg-indigo-600', 'text-white');
         btn.classList.add('bg-gray-200', 'text-gray-700');
     });
-    document.querySelector(`[data-passage="${passage}"]`).classList.remove('bg-gray-200', 'text-gray-700');
-    document.querySelector(`[data-passage="${passage}"]`).classList.add('bg-indigo-600', 'text-white');
+    
+    const targetNav = document.querySelector(`.passage-nav[data-passage="${passage}"]`);
+    if (targetNav) {
+        targetNav.classList.remove('bg-gray-200', 'text-gray-700');
+        targetNav.classList.add('bg-indigo-600', 'text-white');
+    }
     
     // Update current passage display
     currentPassage = passage;
@@ -295,18 +304,27 @@ function initializeQuestionNavigation() {
 
 function showQuestionPart(part) {
     // Hide all question parts
-    document.querySelectorAll('.part-questions').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.part-questions').forEach(el => {
+        el.classList.add('hidden');
+    });
     
     // Show selected part
-    document.querySelector(`[data-part="${part}"]`).classList.remove('hidden');
+    const targetPart = document.querySelector(`.part-questions[data-part="${part}"]`);
+    if (targetPart) {
+        targetPart.classList.remove('hidden');
+    }
     
     // Update navigation
     document.querySelectorAll('.question-nav').forEach(btn => {
         btn.classList.remove('bg-indigo-600', 'text-white');
         btn.classList.add('bg-gray-200', 'text-gray-700');
     });
-    document.querySelector(`[data-part="${part}"]`).classList.remove('bg-gray-200', 'text-gray-700');
-    document.querySelector(`[data-part="${part}"]`).classList.add('bg-indigo-600', 'text-white');
+    
+    const targetNav = document.querySelector(`.question-nav[data-part="${part}"]`);
+    if (targetNav) {
+        targetNav.classList.remove('bg-gray-200', 'text-gray-700');
+        targetNav.classList.add('bg-indigo-600', 'text-white');
+    }
 }
 
 function setupHighlighting() {
