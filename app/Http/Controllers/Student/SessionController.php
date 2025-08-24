@@ -196,7 +196,7 @@ class SessionController extends Controller
             ->firstOrFail();
 
         if ($session->isCompleted()) {
-            abort(404, 'Test session already completed');
+            redirect()->route('student.session.show', $sessionToken);
         }
 
         return $session;
