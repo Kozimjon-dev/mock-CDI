@@ -14,7 +14,7 @@ class SessionController extends Controller
     public function show(string $sessionToken)
     {
         $session = $this->getSession($sessionToken);
-        
+
         if ($session->isCompleted()) {
             return view('student.completed', compact('session'));
         }
@@ -25,7 +25,7 @@ class SessionController extends Controller
     public function listening(string $sessionToken)
     {
         $session = $this->getSession($sessionToken);
-        
+
         if ($session->current_module !== 'listening') {
             return redirect()->route('student.session.show', $sessionToken);
         }
@@ -40,7 +40,7 @@ class SessionController extends Controller
     public function reading(string $sessionToken)
     {
         $session = $this->getSession($sessionToken);
-        
+
         if ($session->current_module !== 'reading') {
             return redirect()->route('student.session.show', $sessionToken);
         }
@@ -55,7 +55,7 @@ class SessionController extends Controller
     public function writing(string $sessionToken)
     {
         $session = $this->getSession($sessionToken);
-        
+
         if ($session->current_module !== 'writing') {
             return redirect()->route('student.session.show', $sessionToken);
         }
@@ -70,14 +70,14 @@ class SessionController extends Controller
     public function submitAnswer(Request $request, string $sessionToken): JsonResponse
     {
         $session = $this->getSession($sessionToken);
-        
+
         $validated = $request->validate([
             'question_id' => 'required|exists:questions,id',
             'answer' => 'required'
         ]);
 
         $question = $session->test->questions()->findOrFail($validated['question_id']);
-        
+
         // Check if answer is correct
         $isCorrect = $question->checkAnswer($validated['answer']);
         $points = $isCorrect ? $question->points : 0;
@@ -108,7 +108,7 @@ class SessionController extends Controller
     public function submitWriting(Request $request, string $sessionToken): JsonResponse
     {
         $session = $this->getSession($sessionToken);
-        
+
         $validated = $request->validate([
             'task' => 'required|in:task_1,task_2',
             'content' => 'required|string|min:10'
@@ -139,13 +139,13 @@ class SessionController extends Controller
     public function completeModule(Request $request, string $sessionToken): JsonResponse
     {
         $session = $this->getSession($sessionToken);
-        
+
         $validated = $request->validate([
             'module' => 'required|in:listening,reading,writing'
         ]);
 
         $module = $validated['module'];
-        
+
         // Mark module as completed
         $session->markModuleCompleted($module);
 
@@ -167,7 +167,7 @@ class SessionController extends Controller
     public function completeTest(Request $request, string $sessionToken): JsonResponse
     {
         $session = $this->getSession($sessionToken);
-        
+
         $session->update([
             'completed_at' => now(),
             'current_module' => 'completed'
@@ -182,7 +182,7 @@ class SessionController extends Controller
     public function heartbeat(Request $request, string $sessionToken): JsonResponse
     {
         $session = $this->getSession($sessionToken);
-        
+
         // Check for potential cheating attempts
         $this->checkForCheating($request, $session);
 

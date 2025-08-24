@@ -36,16 +36,45 @@
                         <div class="text-white font-medium">{{ $audioMaterial->title }}</div>
                     </div>
                     
-                    <audio id="audio-player" class="w-full" controls preload="auto" 
-                           oncontextmenu="return false;" onselectstart="return false;">
+                    <!-- Hidden audio element without controls -->
+                    <audio id="audio-player" preload="auto" style="display: none;">
                         <source src="{{ $audioMaterial->file_url }}" type="{{ $audioMaterial->mime_type }}">
                         Your browser does not support the audio element.
                     </audio>
                     
-                    <div class="mt-4 text-center">
-                        <button id="start-audio" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium">
-                            Start Audio
-                        </button>
+                    <!-- Custom secure audio controls -->
+                    <div class="bg-gray-600 rounded-lg p-4 mb-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm text-gray-300">Audio Progress</span>
+                            <span id="audio-time" class="text-sm text-gray-300">0:00 / 0:00</span>
+                        </div>
+                        
+                        <!-- Progress bar (read-only) -->
+                        <div class="w-full bg-gray-500 rounded-full h-2 mb-3">
+                            <div id="audio-progress" class="bg-green-500 h-2 rounded-full transition-all duration-100" style="width: 0%"></div>
+                        </div>
+                        
+                        <!-- Custom controls -->
+                        <div class="flex justify-center space-x-4">
+                            <button id="start-audio" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium">
+                                Start Audio
+                            </button>
+                            <button id="stop-audio" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md font-medium hidden">
+                                Stop Audio
+                            </button>
+                        </div>
+                        
+                        <!-- Audio status -->
+                        <div class="text-center mt-3">
+                            <span id="audio-status" class="text-sm text-gray-300">Ready to start</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Security notice -->
+                    <div class="bg-red-900 rounded-lg p-3">
+                        <div class="text-red-200 text-sm">
+                            <strong>⚠️ Security Notice:</strong> Audio cannot be paused or replayed. Once started, it will play completely.
+                        </div>
                     </div>
                 </div>
                 @else
@@ -74,7 +103,7 @@
                 <ul class="text-sm text-blue-200 space-y-1">
                     <li>• Listen to the audio carefully</li>
                     <li>• Answer questions as you listen</li>
-                    <li>• You cannot pause or replay the audio</li>
+                    <li>• <strong>You cannot pause or replay the audio</strong></li>
                     <li>• Complete all parts within the time limit</li>
                 </ul>
             </div>
@@ -176,21 +205,6 @@
     z-index: 9999;
 }
 
-/* Custom audio player styles */
-audio::-webkit-media-controls-panel {
-    background-color: #374151;
-}
-
-audio::-webkit-media-controls-play-button {
-    background-color: #10B981;
-    border-radius: 50%;
-}
-
-audio::-webkit-media-controls-current-time-display,
-audio::-webkit-media-controls-time-remaining-display {
-    color: white;
-}
-
 /* Prevent text selection */
 * {
     -webkit-user-select: none;
@@ -206,6 +220,15 @@ input, textarea {
     -ms-user-select: text;
     user-select: text;
 }
+
+/* Disable audio element interactions */
+#audio-player {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
 </style>
 @endpush
 
@@ -216,13 +239,15 @@ let totalParts = {{ $questions->count() }};
 let timeRemaining = {{ $session->test->listening_time * 60 }};
 let timerInterval;
 let audioStarted = false;
+let audioDuration = 0;
+let audioProgressInterval;
 
 // Initialize the test
 document.addEventListener('DOMContentLoaded', function() {
     initializeFullscreen();
     startTimer();
     initializePartNavigation();
-    initializeAudioPlayer();
+    initializeSecureAudioPlayer();
     setupAntiCheating();
     startHeartbeat();
 });
@@ -295,24 +320,132 @@ function showPart(part) {
     document.getElementById('next-part').disabled = part === totalParts;
 }
 
-function initializeAudioPlayer() {
+function initializeSecureAudioPlayer() {
     const audioPlayer = document.getElementById('audio-player');
     const startButton = document.getElementById('start-audio');
+    const stopButton = document.getElementById('stop-audio');
+    const progressBar = document.getElementById('audio-progress');
+    const audioTime = document.getElementById('audio-time');
+    const audioStatus = document.getElementById('audio-status');
     
+    // Get audio duration when metadata is loaded
+    audioPlayer.addEventListener('loadedmetadata', function() {
+        audioDuration = audioPlayer.duration;
+        updateAudioTime(0, audioDuration);
+    });
+    
+    // Start button functionality
     if (startButton) {
         startButton.addEventListener('click', function() {
-            audioPlayer.play();
-            audioStarted = true;
-            this.disabled = true;
-            this.textContent = 'Playing...';
-            this.classList.remove('bg-green-600', 'hover:bg-green-700');
-            this.classList.add('bg-gray-600');
+            if (!audioStarted) {
+                audioPlayer.play().then(() => {
+                    audioStarted = true;
+                    startButton.classList.add('hidden');
+                    stopButton.classList.remove('hidden');
+                    audioStatus.textContent = 'Playing...';
+                    audioStatus.className = 'text-sm text-green-400';
+                    
+                    // Start progress tracking
+                    audioProgressInterval = setInterval(updateAudioProgress, 100);
+                    
+                    // Record that audio was started
+                    recordCheatAttempt('Audio started');
+                }).catch(error => {
+                    console.error('Audio playback failed:', error);
+                    audioStatus.textContent = 'Failed to start audio';
+                    audioStatus.className = 'text-sm text-red-400';
+                });
+            }
         });
     }
     
-    // Disable audio controls
+    // Stop button functionality (only stops, cannot restart)
+    if (stopButton) {
+        stopButton.addEventListener('click', function() {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            audioStarted = true; // Keep as true to prevent restart
+            startButton.classList.remove('hidden');
+            stopButton.classList.add('hidden');
+            startButton.disabled = true;
+            startButton.textContent = 'Audio Completed';
+            startButton.className = 'bg-gray-600 text-white px-6 py-2 rounded-md font-medium cursor-not-allowed';
+            audioStatus.textContent = 'Audio stopped - cannot restart';
+            audioStatus.className = 'text-sm text-red-400';
+            
+            clearInterval(audioProgressInterval);
+            updateAudioProgress();
+            
+            recordCheatAttempt('Audio stopped by user');
+        });
+    }
+    
+    // Audio ended event
+    audioPlayer.addEventListener('ended', function() {
+        audioStarted = true; // Prevent restart
+        startButton.classList.remove('hidden');
+        stopButton.classList.add('hidden');
+        startButton.disabled = true;
+        startButton.textContent = 'Audio Completed';
+        startButton.className = 'bg-gray-600 text-white px-6 py-2 rounded-md font-medium cursor-not-allowed';
+        audioStatus.textContent = 'Audio playback completed';
+        audioStatus.className = 'text-sm text-green-400';
+        
+        clearInterval(audioProgressInterval);
+        updateAudioProgress();
+    });
+    
+    // Prevent all audio controls
+    audioPlayer.addEventListener('pause', function(e) {
+        if (audioStarted && !audioPlayer.ended) {
+            e.preventDefault();
+            audioPlayer.play(); // Force continue playing
+            recordCheatAttempt('Attempted to pause audio');
+        }
+    });
+    
+    audioPlayer.addEventListener('seeked', function(e) {
+        e.preventDefault();
+        recordCheatAttempt('Attempted to seek audio');
+    });
+    
+    // Disable right-click on audio
     audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
     audioPlayer.addEventListener('selectstart', e => e.preventDefault());
+    
+    // Disable keyboard shortcuts for audio
+    document.addEventListener('keydown', function(e) {
+        if (audioStarted && (e.key === ' ' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+            e.preventDefault();
+            recordCheatAttempt('Audio control keyboard shortcut attempted');
+        }
+    });
+}
+
+function updateAudioProgress() {
+    const audioPlayer = document.getElementById('audio-player');
+    const progressBar = document.getElementById('audio-progress');
+    const audioTime = document.getElementById('audio-time');
+    
+    if (audioPlayer.duration && !isNaN(audioPlayer.duration)) {
+        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        progressBar.style.width = progress + '%';
+        updateAudioTime(audioPlayer.currentTime, audioPlayer.duration);
+    }
+}
+
+function updateAudioTime(current, total) {
+    const audioTime = document.getElementById('audio-time');
+    const currentFormatted = formatTime(current);
+    const totalFormatted = formatTime(total);
+    audioTime.textContent = `${currentFormatted} / ${totalFormatted}`;
+}
+
+function formatTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 function setupAntiCheating() {
@@ -386,7 +519,7 @@ function recordCheatAttempt(attempt) {
             fullscreen: !!document.fullscreenElement,
             focused: !document.hidden,
             right_click: attempt.includes('right-click'),
-            keyboard_shortcut: attempt.includes('keyboard'),
+            keyboard_shortcut: attempt.includes('keyboard') || attempt.includes('shortcut'),
             tab_switch: attempt.includes('tab')
         })
     });
@@ -394,6 +527,7 @@ function recordCheatAttempt(attempt) {
 
 function completeModule() {
     clearInterval(timerInterval);
+    clearInterval(audioProgressInterval);
     
     fetch('{{ route("student.session.complete-module", $session->session_token) }}', {
         method: 'POST',
