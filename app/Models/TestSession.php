@@ -64,7 +64,7 @@ class TestSession extends Model
 
     public function isCompleted(): bool
     {
-        return $this->completed_at !== null;
+        return $this->completed_at !== null || $this->current_module === 'completed';
     }
 
     public function isModuleCompleted(string $module): bool

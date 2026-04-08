@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
             $table->foreignId('test_id')->constrained()->onDelete('cascade');
             $table->string('session_token')->unique();
-            $table->enum('current_module', ['listening', 'reading', 'writing', 'completed'])->default('listening');
+            $table->string('current_module')->default('dashboard');
             $table->timestamp('started_at');
             $table->timestamp('listening_started_at')->nullable();
             $table->timestamp('listening_completed_at')->nullable();

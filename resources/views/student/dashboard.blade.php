@@ -23,106 +23,55 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Progress Overview -->
         <div class="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Test Progress</h2>
+            <h2 class="text-lg font-medium text-gray-900 mb-2">Test Progress</h2>
+            <p class="text-sm text-gray-500 mb-4">Istalgan modulni tanlang va boshlang</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Listening Module -->
-                <div class="border rounded-lg p-4 {{ $session->current_module === 'listening' ? 'border-indigo-500 bg-indigo-50' : ($session->isModuleCompleted('listening') ? 'border-green-500 bg-green-50' : 'border-gray-200') }}">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="font-medium text-gray-900">Listening</h3>
-                            <p class="text-sm text-gray-500">{{ $session->test->listening_time }} minutes</p>
-                        </div>
-                        <div class="flex-shrink-0">
-                            @if($session->isModuleCompleted('listening'))
-                                <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                            @elseif($session->current_module === 'listening')
-                                <div class="h-6 w-6 bg-indigo-500 rounded-full flex items-center justify-center">
-                                    <div class="h-2 w-2 bg-white rounded-full"></div>
-                                </div>
-                            @else
-                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            @endif
-                        </div>
-                    </div>
-                    @if($session->current_module === 'listening')
-                        <div class="mt-3">
-                            <a href="{{ route('student.session.listening', $session->session_token) }}" 
-                               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Start Listening
-                            </a>
-                        </div>
-                    @endif
-                </div>
+                @php
+                    $modules = [
+                        'listening' => ['label' => 'Listening', 'icon' => 'headphones', 'color' => 'purple', 'time' => $session->test->listening_time],
+                        'reading' => ['label' => 'Reading', 'icon' => 'book', 'color' => 'blue', 'time' => $session->test->reading_time],
+                        'writing' => ['label' => 'Writing', 'icon' => 'pencil', 'color' => 'green', 'time' => $session->test->writing_time],
+                    ];
+                @endphp
 
-                <!-- Reading Module -->
-                <div class="border rounded-lg p-4 {{ $session->current_module === 'reading' ? 'border-indigo-500 bg-indigo-50' : ($session->isModuleCompleted('reading') ? 'border-green-500 bg-green-50' : 'border-gray-200') }}">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="font-medium text-gray-900">Reading</h3>
-                            <p class="text-sm text-gray-500">{{ $session->test->reading_time }} minutes</p>
-                        </div>
-                        <div class="flex-shrink-0">
-                            @if($session->isModuleCompleted('reading'))
-                                <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                            @elseif($session->current_module === 'reading')
-                                <div class="h-6 w-6 bg-indigo-500 rounded-full flex items-center justify-center">
-                                    <div class="h-2 w-2 bg-white rounded-full"></div>
-                                </div>
+                @foreach($modules as $key => $mod)
+                    @php
+                        $completed = $session->isModuleCompleted($key);
+                        $isCurrent = $session->current_module === $key;
+                    @endphp
+                    <div class="border-2 rounded-lg p-5 transition-all {{ $completed ? 'border-green-400 bg-green-50' : ($isCurrent ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50') }}">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-900">{{ $mod['label'] }}</h3>
+                            @if($completed)
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Completed
+                                </span>
+                            @elseif($isCurrent)
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    In Progress
+                                </span>
                             @else
-                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                    Not Started
+                                </span>
                             @endif
                         </div>
-                    </div>
-                    @if($session->current_module === 'reading')
-                        <div class="mt-3">
-                            <a href="{{ route('student.session.reading', $session->session_token) }}" 
-                               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Start Reading
+                        <p class="text-sm text-gray-500 mb-4">{{ $mod['time'] }} minutes</p>
+                        @if($completed)
+                            <span class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-green-700 bg-green-100 cursor-not-allowed">
+                                Tugatilgan
+                            </span>
+                        @else
+                            <a href="{{ route('student.session.' . $key, $session->session_token) }}"
+                               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                                {{ $isCurrent ? 'Davom ettirish' : 'Boshlash' }} — {{ $mod['label'] }}
                             </a>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Writing Module -->
-                <div class="border rounded-lg p-4 {{ $session->current_module === 'writing' ? 'border-indigo-500 bg-indigo-50' : ($session->isModuleCompleted('writing') ? 'border-green-500 bg-green-50' : 'border-gray-200') }}">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="font-medium text-gray-900">Writing</h3>
-                            <p class="text-sm text-gray-500">{{ $session->test->writing_time }} minutes</p>
-                        </div>
-                        <div class="flex-shrink-0">
-                            @if($session->isModuleCompleted('writing'))
-                                <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                            @elseif($session->current_module === 'writing')
-                                <div class="h-6 w-6 bg-indigo-500 rounded-full flex items-center justify-center">
-                                    <div class="h-2 w-2 bg-white rounded-full"></div>
-                                </div>
-                            @else
-                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            @endif
-                        </div>
+                        @endif
                     </div>
-                    @if($session->current_module === 'writing')
-                        <div class="mt-3">
-                            <a href="{{ route('student.session.writing', $session->session_token) }}" 
-                               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Start Writing
-                            </a>
-                        </div>
-                    @endif
-                </div>
+                @endforeach
             </div>
         </div>
 
@@ -150,57 +99,22 @@
                 </div>
             </div>
         </div>
-
-        <!-- Current Module Action -->
-        @if($session->current_module !== 'completed')
-        <div class="mt-8 text-center">
-            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
-                <h3 class="text-lg font-medium text-indigo-900 mb-2">
-                    Ready to start {{ ucfirst($session->current_module) }}?
-                </h3>
-                <p class="text-indigo-700 mb-4">
-                    Click the button below to begin the {{ $session->current_module }} module.
-                </p>
-                <a href="{{ route('student.session.' . $session->current_module, $session->session_token) }}" 
-                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Start {{ ucfirst($session->current_module) }} Module
-                </a>
-            </div>
-        </div>
-        @endif
     </div>
 </div>
 
 @push('scripts')
 <script>
-// Prevent common keyboard shortcuts
 document.addEventListener('keydown', function(e) {
-    // Prevent Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+A, Ctrl+Z, Ctrl+Y, Ctrl+S, Ctrl+P, F5, Ctrl+R
-    if ((e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a' || e.key === 'z' || e.key === 'y' || e.key === 's' || e.key === 'p')) || 
-        e.key === 'F5' || 
+    if ((e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a' || e.key === 'z' || e.key === 'y' || e.key === 's' || e.key === 'p')) ||
+        e.key === 'F5' ||
         (e.ctrlKey && e.key === 'r')) {
         e.preventDefault();
         return false;
     }
 });
-
-// Prevent right-click context menu
-document.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-// Prevent text selection
-document.addEventListener('selectstart', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-// Prevent drag and drop
-document.addEventListener('dragstart', function(e) {
-    e.preventDefault();
-    return false;
-});
+document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
+document.addEventListener('selectstart', function(e) { e.preventDefault(); return false; });
+document.addEventListener('dragstart', function(e) { e.preventDefault(); return false; });
 </script>
 @endpush
-@endsection 
+@endsection

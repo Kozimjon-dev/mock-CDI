@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\TestController as AdminTestController;
 use App\Http\Controllers\Admin\MaterialController as AdminMaterialController;
 use App\Http\Controllers\Admin\QuestionController as AdminQuestionController;
@@ -32,8 +33,15 @@ Route::prefix('student')->name('student.')->group(function () {
     });
 });
 
-// Admin routes (you might want to add authentication middleware later)
+// Admin auth routes (public)
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+});
+
+// Admin protected routes
+Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::get('/', [AdminTestController::class, 'index'])->name('dashboard');
 
     // Test management

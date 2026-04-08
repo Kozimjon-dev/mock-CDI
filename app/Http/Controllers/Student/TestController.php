@@ -45,7 +45,7 @@ class TestController extends Controller
             'test_id' => $test->id,
             'session_token' => Str::random(32),
             'started_at' => now(),
-            'current_module' => 'listening'
+            'current_module' => 'dashboard'
         ]);
 
         return redirect()->route('student.session.show', $session->session_token)

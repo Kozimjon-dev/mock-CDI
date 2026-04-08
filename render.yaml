@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: mock-cdi-ielts
+    runtime: docker
+    plan: free
+    envVars:
+      - key: APP_NAME
+        value: "MOCK CDI IELTS"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file
+      - key: LOG_CHANNEL
+        value: stderr

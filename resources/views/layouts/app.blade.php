@@ -29,18 +29,24 @@
                             </a>
                         </div>
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <a href="{{ route('home') }}" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                 Home
                             </a>
-                            <a href="{{ route('tests') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <a href="{{ route('tests') }}" class="{{ request()->routeIs('tests') || request()->routeIs('test.show') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                 Tests
                             </a>
-                            @if(request()->is('admin*'))
-                                <a href="{{ route('admin.dashboard') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                    Admin Dashboard
-                                </a>
-                            @endif
                         </div>
+                    </div>
+                    <div class="flex items-center">
+                        @auth
+                            <a href="{{ route('admin.dashboard') }}" class="text-sm text-gray-500 hover:text-gray-700 mr-4">Admin Panel</a>
+                            <form action="{{ route('admin.logout') }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="text-sm text-gray-500 hover:text-gray-700">Logout</button>
+                            </form>
+                        @else
+                            <a href="{{ route('admin.login') }}" class="text-sm text-gray-500 hover:text-gray-700">Admin Login</a>
+                        @endauth
                     </div>
                 </div>
             </div>

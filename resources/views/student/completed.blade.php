@@ -40,31 +40,35 @@
                 </div>
             </div>
             
-            <!-- Module Completion Status -->
+            <!-- Score Results -->
             <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-3">Module Completion</h3>
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-700">Listening</span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Completed
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Your Results</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between bg-purple-50 rounded-lg p-3">
+                        <span class="text-sm font-medium text-purple-700">Listening</span>
+                        <span class="text-sm font-bold text-purple-900">{{ $scores['listening']['correct'] }}/{{ $scores['listening']['total'] }}
+                            @if($scores['listening']['total'] > 0) ({{ round(($scores['listening']['correct'] / $scores['listening']['total']) * 100) }}%) @endif
                         </span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-700">Reading</span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Completed
+                    <div class="flex items-center justify-between bg-blue-50 rounded-lg p-3">
+                        <span class="text-sm font-medium text-blue-700">Reading</span>
+                        <span class="text-sm font-bold text-blue-900">{{ $scores['reading']['correct'] }}/{{ $scores['reading']['total'] }}
+                            @if($scores['reading']['total'] > 0) ({{ round(($scores['reading']['correct'] / $scores['reading']['total']) * 100) }}%) @endif
                         </span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-700">Writing</span>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Completed
+                    <div class="flex items-center justify-between bg-green-50 rounded-lg p-3">
+                        <span class="text-sm font-medium text-green-700">Writing</span>
+                        <span class="text-sm text-green-800">Submitted (reviewed by instructor)</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-indigo-50 rounded-lg p-3 border-2 border-indigo-200">
+                        <span class="text-sm font-bold text-indigo-700">Overall Score</span>
+                        <span class="text-lg font-bold text-indigo-900">{{ $scores['overall']['correct'] }}/{{ $scores['overall']['total'] }}
+                            @if($scores['overall']['total'] > 0) ({{ round(($scores['overall']['correct'] / $scores['overall']['total']) * 100) }}%) @endif
                         </span>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Important Notice -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div class="flex">
@@ -76,7 +80,7 @@
                     <div class="ml-3">
                         <h3 class="text-sm font-medium text-blue-800">Important Notice</h3>
                         <div class="mt-2 text-sm text-blue-700">
-                            <p>Your test has been submitted successfully. Results will be available once reviewed by your instructor.</p>
+                            <p>Your writing responses will be reviewed by your instructor. The scores above reflect your listening and reading performance.</p>
                         </div>
                     </div>
                 </div>

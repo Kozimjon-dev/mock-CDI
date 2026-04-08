@@ -13,10 +13,36 @@ class SessionController extends Controller
 {
     public function show(string $sessionToken)
     {
-        $session = $this->getSession($sessionToken);
+        $session = TestSession::where('session_token', $sessionToken)
+            ->with(['student', 'test'])
+            ->firstOrFail();
 
         if ($session->isCompleted()) {
-            return view('student.completed', compact('session'));
+            $test = $session->test;
+
+            $scores = [
+                'listening' => [
+                    'correct' => StudentResponse::where('student_id', $session->student_id)
+                        ->where('test_id', $session->test_id)
+                        ->where('module', 'listening')
+                        ->where('is_correct', true)->count(),
+                    'total' => $test->listeningQuestions()->count(),
+                ],
+                'reading' => [
+                    'correct' => StudentResponse::where('student_id', $session->student_id)
+                        ->where('test_id', $session->test_id)
+                        ->where('module', 'reading')
+                        ->where('is_correct', true)->count(),
+                    'total' => $test->readingQuestions()->count(),
+                ],
+            ];
+
+            $scores['overall'] = [
+                'correct' => $scores['listening']['correct'] + $scores['reading']['correct'],
+                'total' => $scores['listening']['total'] + $scores['reading']['total'],
+            ];
+
+            return view('student.completed', compact('session', 'scores'));
         }
 
         return view('student.dashboard', compact('session'));
@@ -26,9 +52,12 @@ class SessionController extends Controller
     {
         $session = $this->getSession($sessionToken);
 
-        if ($session->current_module !== 'listening') {
+        if ($session->isModuleCompleted('listening')) {
             return redirect()->route('student.session.show', $sessionToken);
         }
+
+        $session->update(['current_module' => 'listening']);
+        $session->markModuleStarted('listening');
 
         $test = $session->test;
         $audioMaterial = $test->listeningMaterials()->first();
@@ -41,9 +70,12 @@ class SessionController extends Controller
     {
         $session = $this->getSession($sessionToken);
 
-        if ($session->current_module !== 'reading') {
+        if ($session->isModuleCompleted('reading')) {
             return redirect()->route('student.session.show', $sessionToken);
         }
+
+        $session->update(['current_module' => 'reading']);
+        $session->markModuleStarted('reading');
 
         $test = $session->test;
         $materials = $test->readingMaterials()->orderBy('part')->get();
@@ -56,9 +88,12 @@ class SessionController extends Controller
     {
         $session = $this->getSession($sessionToken);
 
-        if ($session->current_module !== 'writing') {
+        if ($session->isModuleCompleted('writing')) {
             return redirect()->route('student.session.show', $sessionToken);
         }
+
+        $session->update(['current_module' => 'writing']);
+        $session->markModuleStarted('writing');
 
         $test = $session->test;
         $writingQuestions = $test->writingQuestions()->get();
@@ -149,18 +184,25 @@ class SessionController extends Controller
         // Mark module as completed
         $session->markModuleCompleted($module);
 
-        // Determine next module
-        $nextModule = $this->getNextModule($module);
-        $session->update(['current_module' => $nextModule]);
+        // Check if all modules are completed
+        $allCompleted = $session->isModuleCompleted('listening')
+            && $session->isModuleCompleted('reading')
+            && $session->isModuleCompleted('writing');
 
-        if ($nextModule === 'completed') {
-            $session->update(['completed_at' => now()]);
+        if ($allCompleted) {
+            $session->update([
+                'current_module' => 'completed',
+                'completed_at' => now(),
+            ]);
+        } else {
+            // Set current_module to dashboard (not a specific module)
+            $session->update(['current_module' => 'dashboard']);
         }
 
         return response()->json([
             'success' => true,
-            'next_module' => $nextModule,
-            'is_completed' => $nextModule === 'completed'
+            'next_module' => $allCompleted ? 'completed' : 'dashboard',
+            'is_completed' => $allCompleted
         ]);
     }
 
