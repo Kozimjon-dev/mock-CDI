@@ -430,7 +430,7 @@ function recordCheatAttempt(attempt) {
 
 function completeModule() {
     clearInterval(timerInterval);
-    
+
     fetch('{{ route("student.session.complete-module", $session->session_token) }}', {
         method: 'POST',
         headers: {
@@ -444,11 +444,7 @@ function completeModule() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            if (data.is_completed) {
-                window.location.href = '{{ route("student.session.show", $session->session_token) }}';
-            } else {
-                window.location.href = '{{ route("student.session.writing", $session->session_token) }}';
-            }
+            window.location.href = '{{ route("student.session.show", $session->session_token) }}';
         }
     });
 }
@@ -463,22 +459,25 @@ document.getElementById('complete-module').addEventListener('click', function() 
 // Auto-save answers
 document.addEventListener('change', function(e) {
     if (e.target.name && e.target.name.startsWith('question_')) {
-        const questionId = e.target.name.replace('question_', '');
-        const answers = [];
-        
+        const questionId = e.target.name.replace(/question_(\d+).*/, '$1');
+        let answer;
+
         if (e.target.type === 'radio') {
-            answers.push(e.target.value);
+            answer = e.target.value;
         } else if (e.target.type === 'checkbox') {
+            const checked = [];
             document.querySelectorAll(`input[name="${e.target.name}"]:checked`).forEach(cb => {
-                answers.push(cb.value);
+                checked.push(cb.value);
             });
+            answer = checked;
         } else if (e.target.type === 'text') {
+            const texts = [];
             document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(input => {
-                if (input.value) answers.push(input.value);
+                texts.push(input.value || '');
             });
+            answer = texts;
         }
-        
-        // Save answer
+
         fetch('{{ route("student.session.submit-answer", $session->session_token) }}', {
             method: 'POST',
             headers: {
@@ -487,7 +486,7 @@ document.addEventListener('change', function(e) {
             },
             body: JSON.stringify({
                 question_id: questionId,
-                answer: answers
+                answer: answer
             })
         });
     }

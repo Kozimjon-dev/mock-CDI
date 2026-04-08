@@ -112,10 +112,14 @@ class SessionController extends Controller
         ]);
 
         $question = $session->test->questions()->findOrFail($validated['question_id']);
+        $answer = $validated['answer'];
 
         // Check if answer is correct
-        $isCorrect = $question->checkAnswer($validated['answer']);
+        $isCorrect = $question->checkAnswer($answer);
         $points = $isCorrect ? $question->points : 0;
+
+        // Store answer as JSON string if array
+        $storedAnswer = is_array($answer) ? json_encode($answer) : $answer;
 
         // Save or update response
         StudentResponse::updateOrCreate(
@@ -125,7 +129,7 @@ class SessionController extends Controller
                 'question_id' => $question->id
             ],
             [
-                'student_answer' => $validated['answer'],
+                'student_answer' => $storedAnswer,
                 'is_correct' => $isCorrect,
                 'points_earned' => $points,
                 'module' => $question->module,
@@ -233,15 +237,9 @@ class SessionController extends Controller
 
     private function getSession(string $sessionToken): TestSession
     {
-        $session = TestSession::where('session_token', $sessionToken)
+        return TestSession::where('session_token', $sessionToken)
             ->with(['student', 'test'])
             ->firstOrFail();
-
-        if ($session->isCompleted()) {
-            redirect()->route('student.session.show', $sessionToken);
-        }
-
-        return $session;
     }
 
     private function getNextModule(string $currentModule): string
