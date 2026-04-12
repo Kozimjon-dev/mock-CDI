@@ -97,38 +97,7 @@
                                 </div>
 
                                 <div class="question-options">
-                                    @if($question->isMultipleChoice())
-                                        <div class="space-y-3">
-                                            @foreach($question->options_array as $index => $option)
-                                            <label class="flex items-center space-x-3 cursor-pointer">
-                                                <input type="radio" name="question_{{ $question->id }}" value="{{ $option }}" 
-                                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
-                                                <span class="text-gray-700">{{ chr(65 + $index) }}. {{ $option }}</span>
-                                            </label>
-                                            @endforeach
-                                        </div>
-                                    @elseif($question->isGapFilling())
-                                        <div class="space-y-3">
-                                            @foreach($question->correct_answers_array as $index => $answer)
-                                            <div class="flex items-center space-x-3">
-                                                <span class="text-gray-700">{{ $index + 1 }}.</span>
-                                                <input type="text" name="question_{{ $question->id }}[]" 
-                                                       class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                                       placeholder="Enter your answer">
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    @elseif($question->isSelectOptions())
-                                        <div class="space-y-3">
-                                            @foreach($question->options_array as $index => $option)
-                                            <label class="flex items-center space-x-3 cursor-pointer">
-                                                <input type="checkbox" name="question_{{ $question->id }}[]" value="{{ $option }}" 
-                                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                                <span class="text-gray-700">{{ $option }}</span>
-                                            </label>
-                                            @endforeach
-                                        </div>
-                                    @endif
+                                    @include('partials.question-types', ['question' => $question, 'theme' => 'light'])
                                 </div>
                             </div>
                             @endforeach
@@ -470,26 +439,95 @@ document.addEventListener('change', function(e) {
                 checked.push(cb.value);
             });
             answer = checked;
+        } else if (e.target.tagName === 'SELECT') {
+            const match = e.target.name.match(/question_(\d+)\[(\d+)\]/);
+            if (match) {
+                const qId = match[1];
+                const answers = {};
+                document.querySelectorAll(`select[name^="question_${qId}["]`).forEach(sel => {
+                    const m = sel.name.match(/\[(\d+)\]/);
+                    if (m) answers[m[1]] = sel.value;
+                });
+                submitAnswer(qId, answers);
+                return;
+            }
+            answer = e.target.value;
         } else if (e.target.type === 'text') {
-            const texts = [];
-            document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(input => {
-                texts.push(input.value || '');
-            });
-            answer = texts;
+            if (e.target.name.includes('[]')) {
+                const texts = [];
+                document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(input => {
+                    texts.push(input.value || '');
+                });
+                answer = texts;
+            } else {
+                answer = e.target.value;
+            }
         }
 
-        fetch('{{ route("student.session.submit-answer", $session->session_token) }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                question_id: questionId,
-                answer: answer
-            })
-        });
+        submitAnswer(questionId, answer);
     }
+});
+
+function submitAnswer(questionId, answer) {
+    fetch('{{ route("student.session.submit-answer", $session->session_token) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            question_id: questionId,
+            answer: answer
+        })
+    });
+}
+
+// Ordering drag-and-drop
+document.querySelectorAll('.ordering-list').forEach(list => {
+    let draggedItem = null;
+
+    list.addEventListener('dragstart', function(e) {
+        draggedItem = e.target.closest('.ordering-item');
+        if (draggedItem) {
+            draggedItem.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
+        }
+    });
+
+    list.addEventListener('dragend', function(e) {
+        if (draggedItem) {
+            draggedItem.style.opacity = '1';
+            draggedItem = null;
+        }
+    });
+
+    list.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const target = e.target.closest('.ordering-item');
+        if (target && target !== draggedItem) {
+            const rect = target.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            if (e.clientY < midY) {
+                list.insertBefore(draggedItem, target);
+            } else {
+                list.insertBefore(draggedItem, target.nextSibling);
+            }
+        }
+    });
+
+    list.addEventListener('drop', function(e) {
+        e.preventDefault();
+        const items = list.querySelectorAll('.ordering-item');
+        const qId = list.dataset.questionId;
+        const order = [];
+        items.forEach((item, index) => {
+            item.querySelector('.ordering-number').textContent = (index + 1) + '.';
+            item.querySelector('input[type="hidden"]').value = item.dataset.value;
+            order.push(item.dataset.value);
+        });
+        submitAnswer(qId, order);
+    });
 });
 </script>
 @endpush

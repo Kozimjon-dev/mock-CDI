@@ -11,7 +11,11 @@
                 <h1 class="text-xl font-bold">{{ $session->test->title }} - Listening</h1>
                 <p class="text-sm text-gray-400">Student: {{ $session->student->full_name }}</p>
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-6">
+                <div class="text-right">
+                    <div class="text-sm text-gray-400">Questions</div>
+                    <div class="text-lg font-bold"><span id="answered-count">0</span> / <span id="total-count">{{ $questions->flatten()->count() }}</span></div>
+                </div>
                 <div class="text-right">
                     <div class="text-sm text-gray-400">Time Remaining</div>
                     <div id="timer" class="text-lg font-mono font-bold text-red-400">{{ $session->test->listening_time }}:00</div>
@@ -24,76 +28,81 @@
         </div>
     </div>
 
-    <div class="flex h-screen">
-        <!-- Audio Player Section -->
-        <div class="w-1/3 bg-gray-800 p-6 border-r border-gray-700">
-            <div class="mb-6">
-                <h2 class="text-lg font-bold mb-4">Audio Player</h2>
-                @if($audioMaterial)
-                <div class="bg-gray-700 rounded-lg p-4">
-                    <div class="mb-4">
-                        <div class="text-sm text-gray-400 mb-2">Audio File</div>
-                        <div class="text-white font-medium">{{ $audioMaterial->title }}</div>
-                    </div>
-                    
-                    <!-- Hidden audio element without controls -->
-                    <audio id="audio-player" preload="auto" style="display: none;">
-                        <source src="{{ $audioMaterial->file_url }}" type="{{ $audioMaterial->mime_type }}">
-                        Your browser does not support the audio element.
-                    </audio>
-                    
-                    <!-- Custom secure audio controls -->
-                    <div class="bg-gray-600 rounded-lg p-4 mb-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-sm text-gray-300">Audio Progress</span>
-                            <span id="audio-time" class="text-sm text-gray-300">0:00 / 0:00</span>
-                        </div>
-                        
-                        <!-- Progress bar (read-only) -->
-                        <div class="w-full bg-gray-500 rounded-full h-2 mb-3">
-                            <div id="audio-progress" class="bg-green-500 h-2 rounded-full transition-all duration-100" style="width: 0%"></div>
-                        </div>
-                        
-                        <!-- Custom controls -->
-                        <div class="flex justify-center space-x-4">
-                            <button id="start-audio" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium">
-                                Start Audio
-                            </button>
-                            <button id="stop-audio" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md font-medium hidden">
-                                Stop Audio
-                            </button>
-                        </div>
-                        
-                        <!-- Audio status -->
-                        <div class="text-center mt-3">
-                            <span id="audio-status" class="text-sm text-gray-300">Ready to start</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Security notice -->
-                    <div class="bg-red-900 rounded-lg p-3">
-                        <div class="text-red-200 text-sm">
-                            <strong>⚠️ Security Notice:</strong> Audio cannot be paused or replayed. Once started, it will play completely.
-                        </div>
-                    </div>
-                </div>
-                @else
-                <div class="bg-red-900 rounded-lg p-4">
-                    <div class="text-red-200">No audio file available</div>
-                </div>
-                @endif
-            </div>
-
+    <div class="flex" style="height: calc(100vh - 64px);">
+        <!-- Left Panel — Audio + Navigation -->
+        <div class="w-1/3 bg-gray-800 p-6 border-r border-gray-700 overflow-y-auto">
             <!-- Part Navigation -->
             <div class="mb-6">
                 <h3 class="text-md font-bold mb-3">Parts</h3>
                 <div class="space-y-2">
                     @foreach($questions as $part => $partQuestions)
-                    <button class="part-nav w-full text-left px-3 py-2 rounded {{ $loop->first ? 'bg-indigo-600' : 'bg-gray-700 hover:bg-gray-600' }}" 
+                    <button class="part-nav w-full text-left px-3 py-2 rounded {{ $loop->first ? 'bg-indigo-600' : 'bg-gray-700 hover:bg-gray-600' }}"
                             data-part="{{ $part }}">
-                        Part {{ $part }} ({{ $partQuestions->count() }} questions)
+                        <div class="flex justify-between items-center">
+                            <span>Part {{ $part }} ({{ $partQuestions->count() }} questions)</span>
+                            <span class="text-xs text-gray-400 part-status" data-part="{{ $part }}">
+                                @if($loop->first) Current @else Upcoming @endif
+                            </span>
+                        </div>
                     </button>
                     @endforeach
+                </div>
+            </div>
+
+            <!-- Audio Player for Current Part -->
+            <div class="mb-6">
+                <h2 class="text-lg font-bold mb-4">Audio Player</h2>
+                @foreach($audioMaterials as $part => $material)
+                <div class="audio-player-section {{ $loop->first ? '' : 'hidden' }}" data-audio-part="{{ $part }}">
+                    <div class="bg-gray-700 rounded-lg p-4">
+                        <div class="mb-3">
+                            <div class="text-white font-medium text-sm">{{ $material->title }}</div>
+                            @if($material->content)
+                            <p class="text-gray-400 text-xs mt-1">{{ Str::limit($material->content, 100) }}</p>
+                            @endif
+                        </div>
+
+                        <audio class="audio-element" data-part="{{ $part }}" preload="auto" style="display:none;">
+                            @if($material->file_url)
+                            <source src="{{ $material->file_url }}" type="{{ $material->mime_type }}">
+                            @endif
+                        </audio>
+
+                        <div class="bg-gray-600 rounded-lg p-3 mb-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs text-gray-300">Progress</span>
+                                <span class="audio-time text-xs text-gray-300" data-part="{{ $part }}">0:00 / 0:00</span>
+                            </div>
+                            <div class="w-full bg-gray-500 rounded-full h-2 mb-2">
+                                <div class="audio-progress bg-green-500 h-2 rounded-full transition-all duration-100" data-part="{{ $part }}" style="width:0%"></div>
+                            </div>
+                            <div class="flex justify-center space-x-3">
+                                <button class="start-audio bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-medium" data-part="{{ $part }}">
+                                    Start Audio
+                                </button>
+                                <button class="stop-audio bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-md text-sm font-medium hidden" data-part="{{ $part }}">
+                                    Stop
+                                </button>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span class="audio-status text-xs text-gray-300" data-part="{{ $part }}">Ready to start</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+
+                @if($audioMaterials->isEmpty())
+                <div class="bg-yellow-900 rounded-lg p-4">
+                    <div class="text-yellow-200 text-sm">No audio files uploaded yet. Answer questions based on the context provided.</div>
+                </div>
+                @endif
+            </div>
+
+            <!-- Security notice -->
+            <div class="bg-red-900 rounded-lg p-3 mb-6">
+                <div class="text-red-200 text-sm">
+                    <strong>Security Notice:</strong> Audio cannot be paused or replayed. Once started, it will play completely.
                 </div>
             </div>
 
@@ -101,22 +110,26 @@
             <div class="bg-blue-900 rounded-lg p-4">
                 <h3 class="text-md font-bold mb-2">Instructions</h3>
                 <ul class="text-sm text-blue-200 space-y-1">
-                    <li>• Listen to the audio carefully</li>
-                    <li>• Answer questions as you listen</li>
-                    <li>• <strong>You cannot pause or replay the audio</strong></li>
-                    <li>• Complete all parts within the time limit</li>
+                    <li>* Listen to the audio carefully</li>
+                    <li>* Answer questions as you listen</li>
+                    <li>* You cannot pause or replay the audio</li>
+                    <li>* Each part has its own audio recording</li>
+                    <li>* Complete all 4 parts within the time limit</li>
                 </ul>
             </div>
         </div>
 
-        <!-- Questions Section -->
+        <!-- Right Panel — Questions -->
         <div class="w-2/3 bg-gray-900 p-6 overflow-y-auto">
             <div id="questions-container">
                 @foreach($questions as $part => $partQuestions)
                 <div class="part-questions {{ $loop->first ? '' : 'hidden' }}" data-part="{{ $part }}">
                     <div class="mb-6">
-                        <h2 class="text-2xl font-bold mb-4">Part {{ $part }}</h2>
-                        <p class="text-gray-400 mb-6">Answer the following {{ $partQuestions->count() }} questions based on the audio.</p>
+                        <h2 class="text-2xl font-bold mb-2">Part {{ $part }}</h2>
+                        <p class="text-gray-400 mb-1">Questions {{ ($part - 1) * 10 + 1 }} — {{ ($part - 1) * 10 + $partQuestions->count() }}</p>
+                        @if(isset($audioMaterials[$part]) && $audioMaterials[$part]->content)
+                        <p class="text-gray-500 text-sm italic">{{ Str::limit($audioMaterials[$part]->content, 200) }}</p>
+                        @endif
                     </div>
 
                     <div class="space-y-8">
@@ -124,45 +137,14 @@
                         <div class="bg-gray-800 rounded-lg p-6 question-item" data-question-id="{{ $question->id }}">
                             <div class="mb-4">
                                 <div class="flex items-center justify-between">
-                                    <h3 class="text-lg font-medium">Question {{ $loop->index + 1 }}</h3>
+                                    <h3 class="text-lg font-medium">Question {{ ($part - 1) * 10 + $loop->iteration }}</h3>
                                     <span class="text-sm text-gray-400">{{ $question->points }} point(s)</span>
                                 </div>
                                 <p class="text-gray-300 mt-2">{{ $question->question_text }}</p>
                             </div>
 
                             <div class="question-options">
-                                @if($question->isMultipleChoice())
-                                    <div class="space-y-3">
-                                        @foreach($question->options_array as $index => $option)
-                                        <label class="flex items-center space-x-3 cursor-pointer">
-                                            <input type="radio" name="question_{{ $question->id }}" value="{{ $option }}" 
-                                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
-                                            <span class="text-gray-300">{{ chr(65 + $index) }}. {{ $option }}</span>
-                                        </label>
-                                        @endforeach
-                                    </div>
-                                @elseif($question->isGapFilling())
-                                    <div class="space-y-3">
-                                        @foreach($question->correct_answers_array as $index => $answer)
-                                        <div class="flex items-center space-x-3">
-                                            <span class="text-gray-300">{{ $index + 1 }}.</span>
-                                            <input type="text" name="question_{{ $question->id }}[]" 
-                                                   class="flex-1 bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-indigo-500 focus:border-indigo-500"
-                                                   placeholder="Enter your answer">
-                                        </div>
-                                        @endforeach
-                                    </div>
-                                @elseif($question->isSelectOptions())
-                                    <div class="space-y-3">
-                                        @foreach($question->options_array as $index => $option)
-                                        <label class="flex items-center space-x-3 cursor-pointer">
-                                            <input type="checkbox" name="question_{{ $question->id }}[]" value="{{ $option }}" 
-                                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                            <span class="text-gray-300">{{ $option }}</span>
-                                        </label>
-                                        @endforeach
-                                    </div>
-                                @endif
+                                @include('partials.question-types', ['question' => $question, 'theme' => 'dark'])
                             </div>
                         </div>
                         @endforeach
@@ -174,16 +156,16 @@
             <!-- Navigation and Submit -->
             <div class="mt-8 pt-6 border-t border-gray-700">
                 <div class="flex justify-between items-center">
-                    <button id="prev-part" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button id="prev-part" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         Previous Part
                     </button>
-                    
+
                     <div class="flex space-x-4">
                         <button id="complete-module" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium">
                             Complete Listening Module
                         </button>
                     </div>
-                    
+
                     <button id="next-part" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                         Next Part
                     </button>
@@ -195,7 +177,6 @@
 
 @push('styles')
 <style>
-/* Full-screen styles */
 #listening-test {
     position: fixed;
     top: 0;
@@ -204,30 +185,17 @@
     height: 100vh;
     z-index: 9999;
 }
-
-/* Prevent text selection */
 * {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
-
-/* Allow selection in input fields */
-input, textarea {
+input, textarea, select {
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
     user-select: text;
-}
-
-/* Disable audio element interactions */
-#audio-player {
-    pointer-events: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
 }
 </style>
 @endpush
@@ -238,25 +206,21 @@ let currentPart = 1;
 let totalParts = {{ $questions->count() }};
 let timeRemaining = {{ $session->test->listening_time * 60 }};
 let timerInterval;
-let audioStarted = false;
-let audioDuration = 0;
-let audioProgressInterval;
+let audioStates = {}; // Track audio state per part
 
-// Initialize the test
 document.addEventListener('DOMContentLoaded', function() {
     initializeFullscreen();
     startTimer();
     initializePartNavigation();
-    initializeSecureAudioPlayer();
+    initializeAudioPlayers();
     setupAntiCheating();
     startHeartbeat();
+    initializeOrderingDragDrop();
 });
 
 function initializeFullscreen() {
     if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-            console.log('Fullscreen request failed');
-        });
+        document.documentElement.requestFullscreen().catch(err => {});
     }
 }
 
@@ -266,7 +230,9 @@ function startTimer() {
         const minutes = Math.floor(timeRemaining / 60);
         const seconds = timeRemaining % 60;
         document.getElementById('timer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
+        if (timeRemaining <= 300) {
+            document.getElementById('timer').classList.add('animate-pulse');
+        }
         if (timeRemaining <= 0) {
             clearInterval(timerInterval);
             completeModule();
@@ -276,22 +242,14 @@ function startTimer() {
 
 function initializePartNavigation() {
     document.getElementById('prev-part').addEventListener('click', function() {
-        if (currentPart > 1) {
-            showPart(currentPart - 1);
-        }
+        if (currentPart > 1) showPart(currentPart - 1);
     });
-    
     document.getElementById('next-part').addEventListener('click', function() {
-        if (currentPart < totalParts) {
-            showPart(currentPart + 1);
-        }
+        if (currentPart < totalParts) showPart(currentPart + 1);
     });
-    
-    // Part navigation buttons
     document.querySelectorAll('.part-nav').forEach(button => {
         button.addEventListener('click', function() {
-            const part = parseInt(this.dataset.part);
-            showPart(part);
+            showPart(parseInt(this.dataset.part));
         });
     });
 }
@@ -299,259 +257,170 @@ function initializePartNavigation() {
 function showPart(part) {
     // Hide all parts
     document.querySelectorAll('.part-questions').forEach(el => el.classList.add('hidden'));
-    
+    document.querySelectorAll('.audio-player-section').forEach(el => el.classList.add('hidden'));
+
     // Show selected part
-    document.querySelector(`[data-part="${part}"]`).classList.remove('hidden');
-    
-    // Update navigation
+    const partQuestions = document.querySelector(`.part-questions[data-part="${part}"]`);
+    if (partQuestions) partQuestions.classList.remove('hidden');
+
+    const audioSection = document.querySelector(`.audio-player-section[data-audio-part="${part}"]`);
+    if (audioSection) audioSection.classList.remove('hidden');
+
+    // Update nav buttons
     document.querySelectorAll('.part-nav').forEach(btn => {
         btn.classList.remove('bg-indigo-600');
         btn.classList.add('bg-gray-700');
     });
-    document.querySelector(`[data-part="${part}"]`).classList.remove('bg-gray-700');
-    document.querySelector(`[data-part="${part}"]`).classList.add('bg-indigo-600');
-    
-    // Update current part display
+    const navBtn = document.querySelector(`.part-nav[data-part="${part}"]`);
+    if (navBtn) {
+        navBtn.classList.remove('bg-gray-700');
+        navBtn.classList.add('bg-indigo-600');
+    }
+
     currentPart = part;
     document.getElementById('current-part').textContent = part;
-    
-    // Update navigation buttons
     document.getElementById('prev-part').disabled = part === 1;
     document.getElementById('next-part').disabled = part === totalParts;
 }
 
-function initializeSecureAudioPlayer() {
-    const audioPlayer = document.getElementById('audio-player');
-    const startButton = document.getElementById('start-audio');
-    const stopButton = document.getElementById('stop-audio');
-    const progressBar = document.getElementById('audio-progress');
-    const audioTime = document.getElementById('audio-time');
-    const audioStatus = document.getElementById('audio-status');
-    
-    // Get audio duration when metadata is loaded
-    audioPlayer.addEventListener('loadedmetadata', function() {
-        audioDuration = audioPlayer.duration;
-        updateAudioTime(0, audioDuration);
-    });
-    
-    // Start button functionality
-    if (startButton) {
-        startButton.addEventListener('click', function() {
-            if (!audioStarted) {
-                audioPlayer.play().then(() => {
-                    audioStarted = true;
-                    startButton.classList.add('hidden');
-                    stopButton.classList.remove('hidden');
-                    audioStatus.textContent = 'Playing...';
-                    audioStatus.className = 'text-sm text-green-400';
-                    
-                    // Start progress tracking
-                    audioProgressInterval = setInterval(updateAudioProgress, 100);
-                    
-                    // Record that audio was started
-                    recordCheatAttempt('Audio started');
-                }).catch(error => {
-                    console.error('Audio playback failed:', error);
-                    audioStatus.textContent = 'Failed to start audio';
-                    audioStatus.className = 'text-sm text-red-400';
-                });
+function initializeAudioPlayers() {
+    document.querySelectorAll('.start-audio').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const part = this.dataset.part;
+            if (audioStates[part]) return; // Already started
+
+            const audio = document.querySelector(`.audio-element[data-part="${part}"]`);
+            if (!audio || !audio.querySelector('source')?.src) {
+                // No audio file — mark as no audio available
+                this.textContent = 'No Audio File';
+                this.disabled = true;
+                this.className = 'bg-gray-600 text-white px-4 py-1.5 rounded-md text-sm font-medium cursor-not-allowed';
+                const status = document.querySelector(`.audio-status[data-part="${part}"]`);
+                if (status) { status.textContent = 'No audio file uploaded'; status.className = 'audio-status text-xs text-yellow-400'; }
+                return;
             }
-        });
-    }
-    
-    // Stop button functionality (only stops, cannot restart)
-    if (stopButton) {
-        stopButton.addEventListener('click', function() {
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-            audioStarted = true; // Keep as true to prevent restart
-            startButton.classList.remove('hidden');
-            stopButton.classList.add('hidden');
-            startButton.disabled = true;
-            startButton.textContent = 'Audio Completed';
-            startButton.className = 'bg-gray-600 text-white px-6 py-2 rounded-md font-medium cursor-not-allowed';
-            audioStatus.textContent = 'Audio stopped - cannot restart';
-            audioStatus.className = 'text-sm text-red-400';
-            
-            clearInterval(audioProgressInterval);
-            updateAudioProgress();
-            
-            recordCheatAttempt('Audio stopped by user');
-        });
-    }
-    
-    // Audio ended event
-    audioPlayer.addEventListener('ended', function() {
-        audioStarted = true; // Prevent restart
-        startButton.classList.remove('hidden');
-        stopButton.classList.add('hidden');
-        startButton.disabled = true;
-        startButton.textContent = 'Audio Completed';
-        startButton.className = 'bg-gray-600 text-white px-6 py-2 rounded-md font-medium cursor-not-allowed';
-        audioStatus.textContent = 'Audio playback completed';
-        audioStatus.className = 'text-sm text-green-400';
-        
-        clearInterval(audioProgressInterval);
-        updateAudioProgress();
-    });
-    
-    // Prevent all audio controls
-    audioPlayer.addEventListener('pause', function(e) {
-        if (audioStarted && !audioPlayer.ended) {
-            e.preventDefault();
-            audioPlayer.play(); // Force continue playing
-            recordCheatAttempt('Attempted to pause audio');
-        }
-    });
-    
-    audioPlayer.addEventListener('seeked', function(e) {
-        e.preventDefault();
-        recordCheatAttempt('Attempted to seek audio');
-    });
-    
-    // Disable right-click on audio
-    audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
-    audioPlayer.addEventListener('selectstart', e => e.preventDefault());
-    
-    // Disable keyboard shortcuts for audio
-    document.addEventListener('keydown', function(e) {
-        if (audioStarted && (e.key === ' ' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-            e.preventDefault();
-            recordCheatAttempt('Audio control keyboard shortcut attempted');
-        }
-    });
-}
 
-function updateAudioProgress() {
-    const audioPlayer = document.getElementById('audio-player');
-    const progressBar = document.getElementById('audio-progress');
-    const audioTime = document.getElementById('audio-time');
-    
-    if (audioPlayer.duration && !isNaN(audioPlayer.duration)) {
-        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progressBar.style.width = progress + '%';
-        updateAudioTime(audioPlayer.currentTime, audioPlayer.duration);
-    }
-}
+            audio.play().then(() => {
+                audioStates[part] = true;
+                this.classList.add('hidden');
+                document.querySelector(`.stop-audio[data-part="${part}"]`).classList.remove('hidden');
+                const status = document.querySelector(`.audio-status[data-part="${part}"]`);
+                status.textContent = 'Playing...';
+                status.className = 'audio-status text-xs text-green-400';
 
-function updateAudioTime(current, total) {
-    const audioTime = document.getElementById('audio-time');
-    const currentFormatted = formatTime(current);
-    const totalFormatted = formatTime(total);
-    audioTime.textContent = `${currentFormatted} / ${totalFormatted}`;
+                // Progress tracking
+                const interval = setInterval(() => {
+                    if (audio.duration && !isNaN(audio.duration)) {
+                        const progress = (audio.currentTime / audio.duration) * 100;
+                        document.querySelector(`.audio-progress[data-part="${part}"]`).style.width = progress + '%';
+                        const timeEl = document.querySelector(`.audio-time[data-part="${part}"]`);
+                        timeEl.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+                    }
+                }, 100);
+                audio.dataset.interval = interval;
+            }).catch(() => {
+                const status = document.querySelector(`.audio-status[data-part="${part}"]`);
+                status.textContent = 'Failed to start audio';
+                status.className = 'audio-status text-xs text-red-400';
+            });
+
+            audio.addEventListener('ended', () => {
+                clearInterval(audio.dataset.interval);
+                this.classList.remove('hidden');
+                document.querySelector(`.stop-audio[data-part="${part}"]`).classList.add('hidden');
+                this.disabled = true;
+                this.textContent = 'Audio Completed';
+                this.className = 'bg-gray-600 text-white px-4 py-1.5 rounded-md text-sm font-medium cursor-not-allowed';
+                const status = document.querySelector(`.audio-status[data-part="${part}"]`);
+                status.textContent = 'Completed';
+                status.className = 'audio-status text-xs text-green-400';
+            });
+        });
+    });
+
+    document.querySelectorAll('.stop-audio').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const part = this.dataset.part;
+            const audio = document.querySelector(`.audio-element[data-part="${part}"]`);
+            audio.pause();
+            audio.currentTime = 0;
+            clearInterval(audio.dataset.interval);
+
+            this.classList.add('hidden');
+            const startBtn = document.querySelector(`.start-audio[data-part="${part}"]`);
+            startBtn.classList.remove('hidden');
+            startBtn.disabled = true;
+            startBtn.textContent = 'Audio Completed';
+            startBtn.className = 'bg-gray-600 text-white px-4 py-1.5 rounded-md text-sm font-medium cursor-not-allowed';
+            const status = document.querySelector(`.audio-status[data-part="${part}"]`);
+            status.textContent = 'Stopped — cannot restart';
+            status.className = 'audio-status text-xs text-red-400';
+        });
+    });
 }
 
 function formatTime(seconds) {
     if (isNaN(seconds)) return '0:00';
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return Math.floor(seconds / 60) + ':' + Math.floor(seconds % 60).toString().padStart(2, '0');
 }
 
 function setupAntiCheating() {
-    // Prevent keyboard shortcuts
     document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a' || e.key === 'z' || e.key === 'y' || e.key === 's' || e.key === 'p')) || 
-            e.key === 'F5' || 
-            (e.ctrlKey && e.key === 'r') ||
-            e.key === 'Escape') {
+        if ((e.ctrlKey && 'cvxazysp'.includes(e.key)) || e.key === 'F5' || (e.ctrlKey && e.key === 'r') || e.key === 'Escape') {
             e.preventDefault();
             return false;
         }
+        if (e.key === ' ' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        }
     });
-    
-    // Prevent right-click
     document.addEventListener('contextmenu', e => e.preventDefault());
-    
-    // Prevent text selection
     document.addEventListener('selectstart', e => e.preventDefault());
-    
-    // Prevent drag and drop
-    document.addEventListener('dragstart', e => e.preventDefault());
-    
-    // Monitor fullscreen changes
     document.addEventListener('fullscreenchange', function() {
-        if (!document.fullscreenElement) {
-            recordCheatAttempt('Exited fullscreen mode');
-        }
+        if (!document.fullscreenElement) recordCheatAttempt('Exited fullscreen mode');
     });
-    
-    // Monitor visibility changes
     document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-            recordCheatAttempt('Page hidden/tab switched');
-        }
+        if (document.hidden) recordCheatAttempt('Page hidden/tab switched');
     });
-    
-    // Monitor window focus
-    window.addEventListener('blur', function() {
-        recordCheatAttempt('Window lost focus');
-    });
+    window.addEventListener('blur', function() { recordCheatAttempt('Window lost focus'); });
 }
 
 function startHeartbeat() {
     setInterval(function() {
         fetch('{{ route("student.session.heartbeat", $session->session_token) }}', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                fullscreen: !!document.fullscreenElement,
-                focused: !document.hidden,
-                right_click: false,
-                keyboard_shortcut: false,
-                tab_switch: false
-            })
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+            body: JSON.stringify({ fullscreen: !!document.fullscreenElement, focused: !document.hidden, right_click: false, keyboard_shortcut: false, tab_switch: false })
         });
-    }, 30000); // Every 30 seconds
+    }, 30000);
 }
 
 function recordCheatAttempt(attempt) {
     fetch('{{ route("student.session.heartbeat", $session->session_token) }}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            fullscreen: !!document.fullscreenElement,
-            focused: !document.hidden,
-            right_click: attempt.includes('right-click'),
-            keyboard_shortcut: attempt.includes('keyboard') || attempt.includes('shortcut'),
-            tab_switch: attempt.includes('tab')
-        })
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+        body: JSON.stringify({ fullscreen: !!document.fullscreenElement, focused: !document.hidden, right_click: attempt.includes('right-click'), keyboard_shortcut: attempt.includes('keyboard'), tab_switch: attempt.includes('tab') })
     });
 }
 
 function completeModule() {
     clearInterval(timerInterval);
-    clearInterval(audioProgressInterval);
+    // Stop all audio
+    document.querySelectorAll('.audio-element').forEach(a => { a.pause(); clearInterval(a.dataset.interval); });
 
     fetch('{{ route("student.session.complete-module", $session->session_token) }}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            module: 'listening'
-        })
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+        body: JSON.stringify({ module: 'listening' })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = '{{ route("student.session.show", $session->session_token) }}';
-        }
-    });
+    .then(r => r.json())
+    .then(data => { if (data.success) window.location.href = '{{ route("student.session.show", $session->session_token) }}'; });
 }
 
-// Complete module button
 document.getElementById('complete-module').addEventListener('click', function() {
-    if (confirm('Are you sure you want to complete the Listening module? You cannot return to it later.')) {
-        completeModule();
-    }
+    if (confirm('Are you sure you want to complete the Listening module? You cannot return to it later.')) completeModule();
 });
 
 // Auto-save answers
@@ -564,31 +433,92 @@ document.addEventListener('change', function(e) {
             answer = e.target.value;
         } else if (e.target.type === 'checkbox') {
             const checked = [];
-            document.querySelectorAll(`input[name="${e.target.name}"]:checked`).forEach(cb => {
-                checked.push(cb.value);
-            });
+            document.querySelectorAll(`input[name="${e.target.name}"]:checked`).forEach(cb => checked.push(cb.value));
             answer = checked;
+        } else if (e.target.tagName === 'SELECT') {
+            const match = e.target.name.match(/question_(\d+)\[(\d+)\]/);
+            if (match) {
+                const qId = match[1];
+                const answers = {};
+                document.querySelectorAll(`select[name^="question_${qId}["]`).forEach(sel => {
+                    const m = sel.name.match(/\[(\d+)\]/);
+                    if (m) answers[m[1]] = sel.value;
+                });
+                submitAnswer(qId, answers);
+                return;
+            }
+            answer = e.target.value;
         } else if (e.target.type === 'text') {
-            const texts = [];
-            document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(input => {
-                texts.push(input.value || '');
-            });
-            answer = texts;
+            if (e.target.name.includes('[]')) {
+                const texts = [];
+                document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(input => texts.push(input.value || ''));
+                answer = texts;
+            } else {
+                answer = e.target.value;
+            }
         }
-
-        fetch('{{ route("student.session.submit-answer", $session->session_token) }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                question_id: questionId,
-                answer: answer
-            })
-        });
+        submitAnswer(questionId, answer);
+        updateAnsweredCount();
     }
 });
+
+function submitAnswer(questionId, answer) {
+    fetch('{{ route("student.session.submit-answer", $session->session_token) }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+        body: JSON.stringify({ question_id: questionId, answer: answer })
+    });
+}
+
+function updateAnsweredCount() {
+    let count = 0;
+    document.querySelectorAll('.question-item').forEach(item => {
+        const inputs = item.querySelectorAll('input:checked, input[type="text"]:not([value=""]), select');
+        let hasAnswer = false;
+        inputs.forEach(inp => {
+            if (inp.type === 'radio' && inp.checked) hasAnswer = true;
+            if (inp.type === 'checkbox' && inp.checked) hasAnswer = true;
+            if (inp.type === 'text' && inp.value.trim()) hasAnswer = true;
+            if (inp.tagName === 'SELECT' && inp.value) hasAnswer = true;
+        });
+        if (hasAnswer) count++;
+    });
+    document.getElementById('answered-count').textContent = count;
+}
+
+// Ordering drag-and-drop
+function initializeOrderingDragDrop() {
+    document.querySelectorAll('.ordering-list').forEach(list => {
+        let draggedItem = null;
+        list.addEventListener('dragstart', function(e) {
+            draggedItem = e.target.closest('.ordering-item');
+            if (draggedItem) { draggedItem.style.opacity = '0.5'; e.dataTransfer.effectAllowed = 'move'; }
+        });
+        list.addEventListener('dragend', function() { if (draggedItem) { draggedItem.style.opacity = '1'; draggedItem = null; } });
+        list.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            const target = e.target.closest('.ordering-item');
+            if (target && target !== draggedItem) {
+                const rect = target.getBoundingClientRect();
+                if (e.clientY < rect.top + rect.height / 2) list.insertBefore(draggedItem, target);
+                else list.insertBefore(draggedItem, target.nextSibling);
+            }
+        });
+        list.addEventListener('drop', function(e) {
+            e.preventDefault();
+            const items = list.querySelectorAll('.ordering-item');
+            const qId = list.dataset.questionId;
+            const order = [];
+            items.forEach((item, i) => {
+                item.querySelector('.ordering-number').textContent = (i + 1) + '.';
+                item.querySelector('input[type="hidden"]').value = item.dataset.value;
+                order.push(item.dataset.value);
+            });
+            submitAnswer(qId, order);
+            updateAnsweredCount();
+        });
+    });
+}
 </script>
 @endpush
-@endsection 
+@endsection

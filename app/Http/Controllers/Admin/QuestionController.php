@@ -33,26 +33,9 @@ class QuestionController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'test_id' => 'required|exists:tests,id',
-            'module' => ['required', Rule::in(['listening', 'reading', 'writing'])],
-            'part' => 'required|integer|min:1|max:4',
-            'type' => ['required', Rule::in(['multiple_choice', 'gap_filling', 'select_options'])],
-            'question_text' => 'required|string|max:1000',
-            'options' => 'nullable|array',
-            'options.*' => 'string|max:255',
-            'correct_answers' => 'required|array|min:1',
-            'correct_answers.*' => 'string|max:255',
-            'points' => 'required|integer|min:1|max:10',
-            'order' => 'nullable|integer|min:1',
-        ]);
+        $validated = $request->validate($this->validationRules());
 
-        // Validate options for multiple choice and select options
-        if (in_array($validated['type'], ['multiple_choice', 'select_options'])) {
-            if (empty($validated['options']) || count($validated['options']) < 2) {
-                return back()->withErrors(['options' => 'Multiple choice and select options questions must have at least 2 options.'])->withInput();
-            }
-        }
+        $this->validateTypeSpecificRules($validated);
 
         $question = Question::create([
             'test_id' => $validated['test_id'],
@@ -64,6 +47,7 @@ class QuestionController extends Controller
             'correct_answers' => $validated['correct_answers'],
             'points' => $validated['points'],
             'order' => $validated['order'] ?? 1,
+            'metadata' => $validated['metadata'] ?? null,
         ]);
 
         return redirect()->route('admin.tests.show', $validated['test_id'])
@@ -93,25 +77,11 @@ class QuestionController extends Controller
      */
     public function update(Request $request, Question $question)
     {
-        $validated = $request->validate([
-            'module' => ['required', Rule::in(['listening', 'reading', 'writing'])],
-            'part' => 'required|integer|min:1|max:4',
-            'type' => ['required', Rule::in(['multiple_choice', 'gap_filling', 'select_options'])],
-            'question_text' => 'required|string|max:1000',
-            'options' => 'nullable|array',
-            'options.*' => 'string|max:255',
-            'correct_answers' => 'required|array|min:1',
-            'correct_answers.*' => 'string|max:255',
-            'points' => 'required|integer|min:1|max:10',
-            'order' => 'nullable|integer|min:1',
-        ]);
+        $rules = $this->validationRules();
+        unset($rules['test_id']);
+        $validated = $request->validate($rules);
 
-        // Validate options for multiple choice and select options
-        if (in_array($validated['type'], ['multiple_choice', 'select_options'])) {
-            if (empty($validated['options']) || count($validated['options']) < 2) {
-                return back()->withErrors(['options' => 'Multiple choice and select options questions must have at least 2 options.'])->withInput();
-            }
-        }
+        $this->validateTypeSpecificRules($validated);
 
         $question->update([
             'module' => $validated['module'],
@@ -122,6 +92,7 @@ class QuestionController extends Controller
             'correct_answers' => $validated['correct_answers'],
             'points' => $validated['points'],
             'order' => $validated['order'] ?? 1,
+            'metadata' => $validated['metadata'] ?? null,
         ]);
 
         return redirect()->route('admin.tests.show', $question->test_id)
@@ -138,5 +109,43 @@ class QuestionController extends Controller
 
         return redirect()->route('admin.tests.show', $testId)
             ->with('success', 'Question deleted successfully!');
+    }
+
+    private function validationRules(): array
+    {
+        return [
+            'test_id' => 'required|exists:tests,id',
+            'module' => ['required', Rule::in(['listening', 'reading', 'writing'])],
+            'part' => 'required|integer|min:1|max:4',
+            'type' => ['required', Rule::in(Question::TYPES)],
+            'question_text' => 'required|string|max:5000',
+            'options' => 'nullable|array',
+            'options.*' => 'string|max:500',
+            'correct_answers' => 'required|array|min:1',
+            'correct_answers.*' => 'nullable|string|max:500',
+            'points' => 'required|integer|min:1|max:10',
+            'order' => 'nullable|integer|min:1',
+            'metadata' => 'nullable|array',
+        ];
+    }
+
+    private function validateTypeSpecificRules(array $validated): void
+    {
+        $type = $validated['type'];
+
+        // Types that require options with at least 2 items
+        $typesNeedingOptions = ['multiple_choice', 'select_options', 'sentence_completion'];
+        if (in_array($type, $typesNeedingOptions)) {
+            if (empty($validated['options']) || count($validated['options']) < 2) {
+                abort(back()->withErrors(['options' => "{$type} questions must have at least 2 options."])->withInput());
+            }
+        }
+
+        // Matching needs options (right-side items) for the dropdown
+        if ($type === 'matching') {
+            if (empty($validated['options']) || count($validated['options']) < 2) {
+                abort(back()->withErrors(['options' => 'Matching questions must have at least 2 right-side items.'])->withInput());
+            }
+        }
     }
 }

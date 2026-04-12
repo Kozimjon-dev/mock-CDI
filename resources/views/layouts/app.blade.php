@@ -105,6 +105,56 @@
         </footer>
     </div>
 
+    <!-- Google Translate -->
+    <div id="google_translate_element" style="display:none;"></div>
+    <div id="translate-btn" onclick="toggleTranslateMenu()" style="position:fixed;bottom:20px;right:20px;z-index:99999;background:#4f46e5;color:#fff;border-radius:50px;padding:10px 18px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;transition:all .2s;">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+        <span id="translate-label">O'zbekcha</span>
+    </div>
+    <script>
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'en',
+            includedLanguages: 'uz,en,ru',
+            autoDisplay: false
+        }, 'google_translate_element');
+
+        // Auto-set to Uzbek on first load
+        setTimeout(function() {
+            var sel = document.querySelector('#google_translate_element select');
+            if (sel && !document.cookie.includes('googtrans')) {
+                sel.value = 'uz';
+                sel.dispatchEvent(new Event('change'));
+            }
+        }, 1000);
+    }
+
+    function toggleTranslateMenu() {
+        var sel = document.querySelector('#google_translate_element select');
+        if (!sel) return;
+        var current = sel.value;
+        if (current === 'uz') {
+            sel.value = 'en';
+            sel.dispatchEvent(new Event('change'));
+            document.getElementById('translate-label').textContent = 'English';
+        } else {
+            sel.value = 'uz';
+            sel.dispatchEvent(new Event('change'));
+            document.getElementById('translate-label').textContent = "O'zbekcha";
+        }
+    }
+    </script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <style>
+    .goog-te-banner-frame, .goog-te-balloon-frame { display:none !important; }
+    body { top:0 !important; }
+    .goog-tooltip { display:none !important; }
+    .goog-te-gadget { font-size:0 !important; }
+    #goog-gt-tt { display:none !important; }
+    .VIpgJd-ZVi9od-ORHb-OEVmcd { display:none !important; }
+    .VIpgJd-ZVi9od-l4eHX-hSRGPd { display:none !important; }
+    </style>
+
     @stack('scripts')
 </body>
 </html> 

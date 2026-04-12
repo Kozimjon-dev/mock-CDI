@@ -10,7 +10,7 @@
                 <h1 class="text-3xl font-bold text-gray-900">Add Question</h1>
                 <p class="mt-2 text-gray-600">Add a new question to "{{ $test->title }}"</p>
             </div>
-            <a href="{{ route('admin.tests.show', $test) }}" 
+            <a href="{{ route('admin.tests.show', $test) }}"
                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Back to Test
             </a>
@@ -18,10 +18,10 @@
     </div>
 
     <div class="bg-white shadow rounded-lg">
-        <form action="{{ route('admin.questions.store') }}" method="POST" id="questionForm">
+        <form action="{{ route('admin.questions.store') }}" method="POST" id="questionForm" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="test_id" value="{{ $test->id }}">
-            
+
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">Question Details</h3>
             </div>
@@ -64,13 +64,15 @@
                     <select name="type" id="type" required
                             class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 @error('type') border-red-300 @enderror">
                         <option value="">Select Type</option>
-                        <option value="multiple_choice" {{ old('type') == 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
-                        <option value="gap_filling" {{ old('type') == 'gap_filling' ? 'selected' : '' }}>Gap Filling</option>
-                        <option value="select_options" {{ old('type') == 'select_options' ? 'selected' : '' }}>Select Options</option>
+                        @foreach(\App\Models\Question::TYPE_LABELS as $value => $label)
+                            <option value="{{ $value }}" {{ old('type') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
                     </select>
                     @error('type')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    <!-- Type description hint -->
+                    <p id="type-hint" class="mt-1 text-sm text-gray-500 hidden"></p>
                 </div>
 
                 <!-- Question Text -->
@@ -79,17 +81,19 @@
                     <textarea name="question_text" id="question_text" rows="3" required
                               class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 @error('question_text') border-red-300 @enderror"
                               placeholder="Enter the question text...">{{ old('question_text') }}</textarea>
+                    <p id="question-text-hint" class="mt-1 text-sm text-gray-500 hidden"></p>
                     @error('question_text')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <!-- Options (for multiple choice and select options) -->
+                <!-- Options (for multiple choice, select options, sentence completion, matching right-side, diagram word bank) -->
                 <div id="optionsSection" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700">Options *</label>
+                    <label class="block text-sm font-medium text-gray-700"><span id="options-label">Options</span> *</label>
+                    <p id="options-hint" class="text-sm text-gray-500 mb-2"></p>
                     <div id="optionsContainer" class="mt-2 space-y-2">
                         <div class="flex items-center space-x-2">
-                            <input type="text" name="options[]" 
+                            <input type="text" name="options[]"
                                    class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                    placeholder="Option 1">
                             <button type="button" onclick="removeOption(this)" class="text-red-600 hover:text-red-900">
@@ -99,7 +103,7 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button" onclick="addOption()" 
+                    <button type="button" onclick="addOption()"
                             class="mt-2 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -108,9 +112,52 @@
                     </button>
                 </div>
 
-                <!-- Correct Answers -->
+                <!-- Ordering Items Section -->
+                <div id="orderingSection" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Items to Order (in correct order) *</label>
+                    <p class="text-sm text-gray-500 mb-2">Enter items in the correct order. Students will see them shuffled.</p>
+                    <div id="orderingContainer" class="mt-2 space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-gray-500 text-sm w-6">1.</span>
+                            <input type="text" name="correct_answers[]"
+                                   class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="Item 1">
+                            <button type="button" onclick="removeOrderingItem(this)" class="text-red-600 hover:text-red-900">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="addOrderingItem()"
+                            class="mt-2 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add Item
+                    </button>
+                </div>
+
+                <!-- Matching Items Section -->
+                <div id="matchingSection" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Matching Pairs *</label>
+                    <p class="text-sm text-gray-500 mb-2">Enter left items in Correct Answers and right items in Options. correct_answers[0] matches options[0], etc.</p>
+                </div>
+
+                <!-- Diagram Labeling Metadata -->
+                <div id="diagramSection" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Diagram Image URL</label>
+                    <input type="text" name="metadata[image_url]"
+                           class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="https://example.com/diagram.png"
+                           value="{{ old('metadata.image_url') }}">
+                    <p class="mt-1 text-sm text-gray-500">Enter URL to the diagram image. Labels will use the Options as word bank and Correct Answers for positions.</p>
+                </div>
+
+                <!-- Correct Answers (hidden for ordering, shown for all others) -->
                 <div id="correctAnswersSection">
-                    <label class="block text-sm font-medium text-gray-700">Correct Answer(s) *</label>
+                    <label class="block text-sm font-medium text-gray-700"><span id="answers-label">Correct Answer(s)</span> *</label>
+                    <p id="answers-hint" class="text-sm text-gray-500 mb-2 hidden"></p>
                     <div id="correctAnswersContainer" class="mt-2 space-y-2">
                         <div class="flex items-center space-x-2">
                             <input type="text" name="correct_answers[]" required
@@ -123,7 +170,7 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button" onclick="addCorrectAnswer()" 
+                    <button type="button" onclick="addCorrectAnswer()"
                             class="mt-2 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -157,11 +204,11 @@
             </div>
 
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-                <a href="{{ route('admin.tests.show', $test) }}" 
+                <a href="{{ route('admin.tests.show', $test) }}"
                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Cancel
                 </a>
-                <button type="submit" 
+                <button type="submit"
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Add Question
                 </button>
@@ -172,37 +219,184 @@
 
 @push('scripts')
 <script>
+const typeConfig = {
+    multiple_choice: {
+        showOptions: true,
+        showCorrectAnswers: true,
+        optionsLabel: 'Options',
+        optionsHint: 'Add at least 2 options for the student to choose from.',
+        answersLabel: 'Correct Answer',
+        answersHint: 'Enter the exact text of the correct option.',
+        questionHint: '',
+        showOrdering: false,
+        showMatching: false,
+        showDiagram: false,
+    },
+    gap_filling: {
+        showOptions: false,
+        showCorrectAnswers: true,
+        answersLabel: 'Correct Answer(s)',
+        answersHint: 'Enter each blank answer. Order must match the blanks in the question.',
+        questionHint: 'Use _____ to indicate blanks in the question text.',
+        showOrdering: false,
+        showMatching: false,
+        showDiagram: false,
+    },
+    select_options: {
+        showOptions: true,
+        showCorrectAnswers: true,
+        optionsLabel: 'Options',
+        optionsHint: 'Add all options. Students can select multiple.',
+        answersLabel: 'Correct Answers',
+        answersHint: 'Enter all correct answers (must match option text exactly).',
+        questionHint: '',
+        showOrdering: false,
+        showMatching: false,
+        showDiagram: false,
+    },
+    true_false_notgiven: {
+        showOptions: false,
+        showCorrectAnswers: true,
+        answersLabel: 'Correct Answer',
+        answersHint: 'Enter exactly: True, False, or Not Given',
+        questionHint: 'Enter the statement that students will evaluate.',
+        showOrdering: false,
+        showMatching: false,
+        showDiagram: false,
+    },
+    yes_no_notgiven: {
+        showOptions: false,
+        showCorrectAnswers: true,
+        answersLabel: 'Correct Answer',
+        answersHint: 'Enter exactly: Yes, No, or Not Given',
+        questionHint: 'Enter the statement that students will evaluate.',
+        showOrdering: false,
+        showMatching: false,
+        showDiagram: false,
+    },
+    matching: {
+        showOptions: true,
+        showCorrectAnswers: true,
+        optionsLabel: 'Right Column Items (to match from)',
+        optionsHint: 'These are the items students will choose from (e.g., descriptions, categories).',
+        answersLabel: 'Left Column Items = Correct Matches',
+        answersHint: 'Enter left-side items. Answer 1 matches Option 1, Answer 2 matches Option 2, etc.',
+        questionHint: 'Describe the matching task (e.g., "Match each researcher with their finding").',
+        showOrdering: false,
+        showMatching: true,
+        showDiagram: false,
+    },
+    sentence_completion: {
+        showOptions: true,
+        showCorrectAnswers: true,
+        optionsLabel: 'Word Bank',
+        optionsHint: 'Add the words/phrases students will choose from to fill the blanks.',
+        answersLabel: 'Correct Answers (in blank order)',
+        answersHint: 'Enter correct word/phrase for each blank, in order.',
+        questionHint: 'Use _____ to indicate blanks. E.g., "The _____ was discovered in _____."',
+        showOrdering: false,
+        showMatching: false,
+        showDiagram: false,
+    },
+    short_answer: {
+        showOptions: false,
+        showCorrectAnswers: true,
+        answersLabel: 'Accepted Answers',
+        answersHint: 'Enter all accepted answer variations (e.g., "solar energy", "solar power").',
+        questionHint: 'Students will type a short answer (max 3 words).',
+        showOrdering: false,
+        showMatching: false,
+        showDiagram: false,
+    },
+    diagram_labeling: {
+        showOptions: true,
+        showCorrectAnswers: true,
+        optionsLabel: 'Word Bank',
+        optionsHint: 'Words/phrases students choose from to label the diagram.',
+        answersLabel: 'Correct Labels (position order)',
+        answersHint: 'Enter correct label for each position (1, 2, 3...) in order.',
+        questionHint: 'Describe what the diagram shows.',
+        showOrdering: false,
+        showMatching: false,
+        showDiagram: true,
+    },
+    ordering: {
+        showOptions: false,
+        showCorrectAnswers: false,
+        questionHint: 'Describe what students should order (e.g., "Put these events in chronological order").',
+        showOrdering: true,
+        showMatching: false,
+        showDiagram: false,
+    },
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.getElementById('type');
-    const optionsSection = document.getElementById('optionsSection');
-    
-    typeSelect.addEventListener('change', function() {
-        if (this.value === 'multiple_choice' || this.value === 'select_options') {
-            optionsSection.classList.remove('hidden');
-        } else {
-            optionsSection.classList.add('hidden');
-        }
-    });
+    typeSelect.addEventListener('change', updateFormForType);
+    if (typeSelect.value) updateFormForType();
 });
+
+function updateFormForType() {
+    const type = document.getElementById('type').value;
+    const config = typeConfig[type];
+    if (!config) return;
+
+    // Options section
+    const optionsSection = document.getElementById('optionsSection');
+    optionsSection.classList.toggle('hidden', !config.showOptions);
+    if (config.optionsLabel) document.getElementById('options-label').textContent = config.optionsLabel;
+    if (config.optionsHint) {
+        document.getElementById('options-hint').textContent = config.optionsHint;
+        document.getElementById('options-hint').classList.remove('hidden');
+    }
+
+    // Correct answers section
+    const answersSection = document.getElementById('correctAnswersSection');
+    answersSection.classList.toggle('hidden', !config.showCorrectAnswers);
+    if (config.answersLabel) document.getElementById('answers-label').textContent = config.answersLabel;
+    const answersHint = document.getElementById('answers-hint');
+    if (config.answersHint) {
+        answersHint.textContent = config.answersHint;
+        answersHint.classList.remove('hidden');
+    } else {
+        answersHint.classList.add('hidden');
+    }
+
+    // Question text hint
+    const questionHint = document.getElementById('question-text-hint');
+    if (config.questionHint) {
+        questionHint.textContent = config.questionHint;
+        questionHint.classList.remove('hidden');
+    } else {
+        questionHint.classList.add('hidden');
+    }
+
+    // Ordering section
+    document.getElementById('orderingSection').classList.toggle('hidden', !config.showOrdering);
+
+    // Matching hint
+    document.getElementById('matchingSection').classList.toggle('hidden', !config.showMatching);
+
+    // Diagram section
+    document.getElementById('diagramSection').classList.toggle('hidden', !config.showDiagram);
+}
 
 function addOption() {
     const container = document.getElementById('optionsContainer');
-    const optionCount = container.children.length + 1;
-    
-    const optionDiv = document.createElement('div');
-    optionDiv.className = 'flex items-center space-x-2';
-    optionDiv.innerHTML = `
-        <input type="text" name="options[]" 
+    const count = container.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'flex items-center space-x-2';
+    div.innerHTML = `
+        <input type="text" name="options[]"
                class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-               placeholder="Option ${optionCount}">
+               placeholder="Option ${count}">
         <button type="button" onclick="removeOption(this)" class="text-red-600 hover:text-red-900">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
         </button>
     `;
-    
-    container.appendChild(optionDiv);
+    container.appendChild(div);
 }
 
 function removeOption(button) {
@@ -211,22 +405,20 @@ function removeOption(button) {
 
 function addCorrectAnswer() {
     const container = document.getElementById('correctAnswersContainer');
-    const answerCount = container.children.length + 1;
-    
-    const answerDiv = document.createElement('div');
-    answerDiv.className = 'flex items-center space-x-2';
-    answerDiv.innerHTML = `
+    const count = container.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'flex items-center space-x-2';
+    div.innerHTML = `
         <input type="text" name="correct_answers[]" required
                class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-               placeholder="Correct answer ${answerCount}">
+               placeholder="Correct answer ${count}">
         <button type="button" onclick="removeCorrectAnswer(this)" class="text-red-600 hover:text-red-900">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
         </button>
     `;
-    
-    container.appendChild(answerDiv);
+    container.appendChild(div);
 }
 
 function removeCorrectAnswer(button) {
@@ -234,6 +426,39 @@ function removeCorrectAnswer(button) {
         button.parentElement.remove();
     }
 }
+
+function addOrderingItem() {
+    const container = document.getElementById('orderingContainer');
+    const count = container.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'flex items-center space-x-2';
+    div.innerHTML = `
+        <span class="text-gray-500 text-sm w-6">${count}.</span>
+        <input type="text" name="correct_answers[]"
+               class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+               placeholder="Item ${count}">
+        <button type="button" onclick="removeOrderingItem(this)" class="text-red-600 hover:text-red-900">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </button>
+    `;
+    container.appendChild(div);
+    renumberOrderingItems();
+}
+
+function removeOrderingItem(button) {
+    if (document.getElementById('orderingContainer').children.length > 1) {
+        button.parentElement.remove();
+        renumberOrderingItems();
+    }
+}
+
+function renumberOrderingItems() {
+    document.querySelectorAll('#orderingContainer > div').forEach((div, index) => {
+        div.querySelector('span').textContent = (index + 1) + '.';
+    });
+}
 </script>
 @endpush
-@endsection 
+@endsection

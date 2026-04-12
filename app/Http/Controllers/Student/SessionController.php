@@ -60,10 +60,10 @@ class SessionController extends Controller
         $session->markModuleStarted('listening');
 
         $test = $session->test;
-        $audioMaterial = $test->listeningMaterials()->first();
+        $audioMaterials = $test->listeningMaterials()->orderBy('part')->get()->keyBy('part');
         $questions = $test->listeningQuestions()->get()->groupBy('part');
 
-        return view('student.listening', compact('session', 'test', 'audioMaterial', 'questions'));
+        return view('student.listening', compact('session', 'test', 'audioMaterials', 'questions'));
     }
 
     public function reading(string $sessionToken)
