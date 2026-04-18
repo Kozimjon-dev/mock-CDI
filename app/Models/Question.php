@@ -14,27 +14,23 @@ class Question extends Model
     const TYPES = [
         'multiple_choice',
         'gap_filling',
-        'select_options',
         'true_false_notgiven',
         'yes_no_notgiven',
         'matching',
         'sentence_completion',
         'short_answer',
         'diagram_labeling',
-        'ordering',
     ];
 
     const TYPE_LABELS = [
         'multiple_choice' => 'Multiple Choice',
         'gap_filling' => 'Gap Filling',
-        'select_options' => 'Select Options (Multiple Answers)',
         'true_false_notgiven' => 'True / False / Not Given',
         'yes_no_notgiven' => 'Yes / No / Not Given',
         'matching' => 'Matching',
         'sentence_completion' => 'Sentence/Summary Completion',
         'short_answer' => 'Short Answer',
         'diagram_labeling' => 'Diagram/Map Labeling',
-        'ordering' => 'Ordering/Sequencing',
     ];
 
     protected $fillable = [
@@ -75,14 +71,12 @@ class Question extends Model
     // Type check methods
     public function isMultipleChoice(): bool { return $this->type === 'multiple_choice'; }
     public function isGapFilling(): bool { return $this->type === 'gap_filling'; }
-    public function isSelectOptions(): bool { return $this->type === 'select_options'; }
     public function isTrueFalseNotGiven(): bool { return $this->type === 'true_false_notgiven'; }
     public function isYesNoNotGiven(): bool { return $this->type === 'yes_no_notgiven'; }
     public function isMatching(): bool { return $this->type === 'matching'; }
     public function isSentenceCompletion(): bool { return $this->type === 'sentence_completion'; }
     public function isShortAnswer(): bool { return $this->type === 'short_answer'; }
     public function isDiagramLabeling(): bool { return $this->type === 'diagram_labeling'; }
-    public function isOrdering(): bool { return $this->type === 'ordering'; }
 
     public function getOptionsArrayAttribute(): array
     {
@@ -117,15 +111,6 @@ class Question extends Model
             if (is_array($studentAnswer)) {
                 $student = array_map(fn($a) => strtolower(trim($a)), $studentAnswer);
                 $correct = array_map(fn($a) => strtolower(trim($a)), $this->correct_answers);
-                return $student == $correct;
-            }
-            return false;
-        }
-
-        if ($this->isSelectOptions()) {
-            if (is_array($studentAnswer)) {
-                $student = collect($studentAnswer)->sort()->values()->all();
-                $correct = collect($this->correct_answers)->sort()->values()->all();
                 return $student == $correct;
             }
             return false;
@@ -183,14 +168,6 @@ class Question extends Model
                     }
                 }
                 return count($studentAnswer) === count($correct);
-            }
-            return false;
-        }
-
-        if ($this->isOrdering()) {
-            // studentAnswer is array of items in student's order
-            if (is_array($studentAnswer)) {
-                return array_values($studentAnswer) == array_values($this->correct_answers);
             }
             return false;
         }

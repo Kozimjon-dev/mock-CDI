@@ -112,71 +112,29 @@
                     </button>
                 </div>
 
-                <!-- Ordering Items Section -->
-                <div id="orderingSection" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700">Items to Order (in correct order) *</label>
-                    <p class="text-sm text-gray-500 mb-2">Enter items in the correct order. Students will see them shuffled.</p>
-                    <div id="orderingContainer" class="mt-2 space-y-2">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-gray-500 text-sm w-6">1.</span>
-                            <input type="text" name="correct_answers[]"
-                                   class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="Item 1">
-                            <button type="button" onclick="removeOrderingItem(this)" class="text-red-600 hover:text-red-900">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" onclick="addOrderingItem()"
-                            class="mt-2 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        Add Item
-                    </button>
-                </div>
-
                 <!-- Matching Items Section -->
                 <div id="matchingSection" class="hidden">
                     <label class="block text-sm font-medium text-gray-700">Matching Pairs *</label>
                     <p class="text-sm text-gray-500 mb-2">Enter left items in Correct Answers and right items in Options. correct_answers[0] matches options[0], etc.</p>
                 </div>
 
-                <!-- Diagram Labeling Metadata -->
-                <div id="diagramSection" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700">Diagram Image URL</label>
+                <!-- Image URL (for diagram labeling and writing tasks) -->
+                <div id="imageSection" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Image URL (optional)</label>
                     <input type="text" name="metadata[image_url]"
                            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                           placeholder="https://example.com/diagram.png"
+                           placeholder="https://example.com/image.png"
                            value="{{ old('metadata.image_url') }}">
-                    <p class="mt-1 text-sm text-gray-500">Enter URL to the diagram image. Labels will use the Options as word bank and Correct Answers for positions.</p>
+                    <p id="image-hint" class="mt-1 text-sm text-gray-500">Image will be displayed to the student alongside the question.</p>
                 </div>
 
-                <!-- Correct Answers (hidden for ordering, shown for all others) -->
+                <!-- Correct Answer (hidden for ordering, shown for all others) -->
                 <div id="correctAnswersSection">
-                    <label class="block text-sm font-medium text-gray-700"><span id="answers-label">Correct Answer(s)</span> *</label>
+                    <label for="correct_answer" class="block text-sm font-medium text-gray-700"><span id="answers-label">Correct Answer</span> *</label>
                     <p id="answers-hint" class="text-sm text-gray-500 mb-2 hidden"></p>
-                    <div id="correctAnswersContainer" class="mt-2 space-y-2">
-                        <div class="flex items-center space-x-2">
-                            <input type="text" name="correct_answers[]" required
-                                   class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="Correct answer">
-                            <button type="button" onclick="removeCorrectAnswer(this)" class="text-red-600 hover:text-red-900">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" onclick="addCorrectAnswer()"
-                            class="mt-2 inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        Add Answer
-                    </button>
+                    <input type="text" name="correct_answers[]" id="correct_answer" required
+                           class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="Correct answer" value="{{ old('correct_answers.0') }}">
                 </div>
 
                 <!-- Points -->
@@ -228,9 +186,8 @@ const typeConfig = {
         answersLabel: 'Correct Answer',
         answersHint: 'Enter the exact text of the correct option.',
         questionHint: '',
-        showOrdering: false,
         showMatching: false,
-        showDiagram: false,
+        showImage: false,
     },
     gap_filling: {
         showOptions: false,
@@ -238,21 +195,8 @@ const typeConfig = {
         answersLabel: 'Correct Answer(s)',
         answersHint: 'Enter each blank answer. Order must match the blanks in the question.',
         questionHint: 'Use _____ to indicate blanks in the question text.',
-        showOrdering: false,
         showMatching: false,
-        showDiagram: false,
-    },
-    select_options: {
-        showOptions: true,
-        showCorrectAnswers: true,
-        optionsLabel: 'Options',
-        optionsHint: 'Add all options. Students can select multiple.',
-        answersLabel: 'Correct Answers',
-        answersHint: 'Enter all correct answers (must match option text exactly).',
-        questionHint: '',
-        showOrdering: false,
-        showMatching: false,
-        showDiagram: false,
+        showImage: false,
     },
     true_false_notgiven: {
         showOptions: false,
@@ -260,9 +204,8 @@ const typeConfig = {
         answersLabel: 'Correct Answer',
         answersHint: 'Enter exactly: True, False, or Not Given',
         questionHint: 'Enter the statement that students will evaluate.',
-        showOrdering: false,
         showMatching: false,
-        showDiagram: false,
+        showImage: false,
     },
     yes_no_notgiven: {
         showOptions: false,
@@ -270,9 +213,8 @@ const typeConfig = {
         answersLabel: 'Correct Answer',
         answersHint: 'Enter exactly: Yes, No, or Not Given',
         questionHint: 'Enter the statement that students will evaluate.',
-        showOrdering: false,
         showMatching: false,
-        showDiagram: false,
+        showImage: false,
     },
     matching: {
         showOptions: true,
@@ -282,9 +224,8 @@ const typeConfig = {
         answersLabel: 'Left Column Items = Correct Matches',
         answersHint: 'Enter left-side items. Answer 1 matches Option 1, Answer 2 matches Option 2, etc.',
         questionHint: 'Describe the matching task (e.g., "Match each researcher with their finding").',
-        showOrdering: false,
         showMatching: true,
-        showDiagram: false,
+        showImage: false,
     },
     sentence_completion: {
         showOptions: true,
@@ -294,9 +235,8 @@ const typeConfig = {
         answersLabel: 'Correct Answers (in blank order)',
         answersHint: 'Enter correct word/phrase for each blank, in order.',
         questionHint: 'Use _____ to indicate blanks. E.g., "The _____ was discovered in _____."',
-        showOrdering: false,
         showMatching: false,
-        showDiagram: false,
+        showImage: false,
     },
     short_answer: {
         showOptions: false,
@@ -304,9 +244,8 @@ const typeConfig = {
         answersLabel: 'Accepted Answers',
         answersHint: 'Enter all accepted answer variations (e.g., "solar energy", "solar power").',
         questionHint: 'Students will type a short answer (max 3 words).',
-        showOrdering: false,
         showMatching: false,
-        showDiagram: false,
+        showImage: false,
     },
     diagram_labeling: {
         showOptions: true,
@@ -316,23 +255,15 @@ const typeConfig = {
         answersLabel: 'Correct Labels (position order)',
         answersHint: 'Enter correct label for each position (1, 2, 3...) in order.',
         questionHint: 'Describe what the diagram shows.',
-        showOrdering: false,
         showMatching: false,
-        showDiagram: true,
-    },
-    ordering: {
-        showOptions: false,
-        showCorrectAnswers: false,
-        questionHint: 'Describe what students should order (e.g., "Put these events in chronological order").',
-        showOrdering: true,
-        showMatching: false,
-        showDiagram: false,
+        showImage: true,
     },
 };
 
 document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.getElementById('type');
     typeSelect.addEventListener('change', updateFormForType);
+    document.getElementById('module').addEventListener('change', updateFormForType);
     if (typeSelect.value) updateFormForType();
 });
 
@@ -371,14 +302,13 @@ function updateFormForType() {
         questionHint.classList.add('hidden');
     }
 
-    // Ordering section
-    document.getElementById('orderingSection').classList.toggle('hidden', !config.showOrdering);
-
     // Matching hint
     document.getElementById('matchingSection').classList.toggle('hidden', !config.showMatching);
 
-    // Diagram section
-    document.getElementById('diagramSection').classList.toggle('hidden', !config.showDiagram);
+    // Image section (diagram / writing task image)
+    const module = document.getElementById('module').value;
+    const showImage = config.showImage || module === 'writing';
+    document.getElementById('imageSection').classList.toggle('hidden', !showImage);
 }
 
 function addOption() {
@@ -403,62 +333,6 @@ function removeOption(button) {
     button.parentElement.remove();
 }
 
-function addCorrectAnswer() {
-    const container = document.getElementById('correctAnswersContainer');
-    const count = container.children.length + 1;
-    const div = document.createElement('div');
-    div.className = 'flex items-center space-x-2';
-    div.innerHTML = `
-        <input type="text" name="correct_answers[]" required
-               class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-               placeholder="Correct answer ${count}">
-        <button type="button" onclick="removeCorrectAnswer(this)" class="text-red-600 hover:text-red-900">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-        </button>
-    `;
-    container.appendChild(div);
-}
-
-function removeCorrectAnswer(button) {
-    if (document.getElementById('correctAnswersContainer').children.length > 1) {
-        button.parentElement.remove();
-    }
-}
-
-function addOrderingItem() {
-    const container = document.getElementById('orderingContainer');
-    const count = container.children.length + 1;
-    const div = document.createElement('div');
-    div.className = 'flex items-center space-x-2';
-    div.innerHTML = `
-        <span class="text-gray-500 text-sm w-6">${count}.</span>
-        <input type="text" name="correct_answers[]"
-               class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-               placeholder="Item ${count}">
-        <button type="button" onclick="removeOrderingItem(this)" class="text-red-600 hover:text-red-900">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-        </button>
-    `;
-    container.appendChild(div);
-    renumberOrderingItems();
-}
-
-function removeOrderingItem(button) {
-    if (document.getElementById('orderingContainer').children.length > 1) {
-        button.parentElement.remove();
-        renumberOrderingItems();
-    }
-}
-
-function renumberOrderingItems() {
-    document.querySelectorAll('#orderingContainer > div').forEach((div, index) => {
-        div.querySelector('span').textContent = (index + 1) + '.';
-    });
-}
 </script>
 @endpush
 @endsection

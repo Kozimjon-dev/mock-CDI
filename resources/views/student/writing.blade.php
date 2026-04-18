@@ -55,13 +55,19 @@
                         
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
                             <h4 class="font-medium text-gray-900 mb-2">Task Description:</h4>
-                            @if($writingQuestions->where('part', 1)->first())
-                                <p class="text-gray-700">{{ $writingQuestions->where('part', 1)->first()->question_text }}</p>
+                            @php $task1Question = $writingQuestions->where('part', 1)->first(); @endphp
+                            @if($task1Question)
+                                <p class="text-gray-700">{{ $task1Question->question_text }}</p>
+                                @if($task1Question->meta('image_url'))
+                                <div class="mt-4">
+                                    <img src="{{ $task1Question->meta('image_url') }}" alt="Task 1 Image" class="max-w-full rounded-lg border border-gray-300">
+                                </div>
+                                @endif
                             @else
                                 <p class="text-gray-700">Write at least 150 words describing the information shown in the chart/graph/diagram.</p>
                             @endif
                         </div>
-                        
+
                         <div class="mb-4">
                             <label for="writing-task-1" class="block text-sm font-medium text-gray-700 mb-2">
                                 Your Response:

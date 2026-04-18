@@ -34,17 +34,6 @@
         @endforeach
     </div>
 
-@elseif($question->isSelectOptions())
-    <div class="space-y-3">
-        @foreach($question->options_array as $index => $option)
-        <label class="flex items-center space-x-3 {{ $labelClass }}">
-            <input type="checkbox" name="question_{{ $question->id }}[]" value="{{ $option }}"
-                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-            <span class="{{ $textClass }}">{{ $option }}</span>
-        </label>
-        @endforeach
-    </div>
-
 @elseif($question->isTrueFalseNotGiven())
     <div class="space-y-3">
         @foreach(['True', 'False', 'Not Given'] as $option)
@@ -138,26 +127,4 @@
         @endforeach
     </div>
 
-@elseif($question->isOrdering())
-    {{-- Draggable ordering list --}}
-    @php
-        $items = $question->correct_answers_array;
-        $shuffled = $items;
-        shuffle($shuffled);
-    @endphp
-    <div class="ordering-container" data-question-id="{{ $question->id }}">
-        <p class="text-sm {{ $hintClass }} mb-3">Drag items to put them in the correct order.</p>
-        <div class="ordering-list space-y-2" data-question-id="{{ $question->id }}">
-            @foreach($shuffled as $index => $item)
-            <div class="ordering-item flex items-center space-x-3 p-3 rounded-lg border cursor-move {{ $dragBg }} {{ $dragHoverBg }}" draggable="true" data-value="{{ $item }}">
-                <span class="ordering-number {{ $hintClass }} font-medium w-6">{{ $index + 1 }}.</span>
-                <svg class="h-5 w-5 {{ $hintClass }} flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-                </svg>
-                <span class="{{ $textClass }}">{{ $item }}</span>
-                <input type="hidden" name="question_{{ $question->id }}[]" value="{{ $item }}">
-            </div>
-            @endforeach
-        </div>
-    </div>
 @endif

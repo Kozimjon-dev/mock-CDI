@@ -93,7 +93,9 @@
                                         <h4 class="text-md font-medium text-gray-900">Question {{ $loop->index + 1 }}</h4>
                                         <span class="text-sm text-gray-500">{{ $question->points }} point(s)</span>
                                     </div>
+                                    @if(!$question->isSentenceCompletion())
                                     <p class="text-gray-700 mt-2">{{ $question->question_text }}</p>
+                                    @endif
                                 </div>
 
                                 <div class="question-options">
@@ -255,10 +257,13 @@ function showPassage(passage) {
     // Update current passage display
     currentPassage = passage;
     document.getElementById('current-passage').textContent = passage;
-    
+
     // Update navigation buttons
     document.getElementById('prev-passage').disabled = passage === 1;
     document.getElementById('next-passage').disabled = passage === totalPassages;
+
+    // Also switch questions to matching part
+    showQuestionPart(passage);
 }
 
 function initializeQuestionNavigation() {
@@ -482,53 +487,6 @@ function submitAnswer(questionId, answer) {
     });
 }
 
-// Ordering drag-and-drop
-document.querySelectorAll('.ordering-list').forEach(list => {
-    let draggedItem = null;
-
-    list.addEventListener('dragstart', function(e) {
-        draggedItem = e.target.closest('.ordering-item');
-        if (draggedItem) {
-            draggedItem.style.opacity = '0.5';
-            e.dataTransfer.effectAllowed = 'move';
-        }
-    });
-
-    list.addEventListener('dragend', function(e) {
-        if (draggedItem) {
-            draggedItem.style.opacity = '1';
-            draggedItem = null;
-        }
-    });
-
-    list.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        const target = e.target.closest('.ordering-item');
-        if (target && target !== draggedItem) {
-            const rect = target.getBoundingClientRect();
-            const midY = rect.top + rect.height / 2;
-            if (e.clientY < midY) {
-                list.insertBefore(draggedItem, target);
-            } else {
-                list.insertBefore(draggedItem, target.nextSibling);
-            }
-        }
-    });
-
-    list.addEventListener('drop', function(e) {
-        e.preventDefault();
-        const items = list.querySelectorAll('.ordering-item');
-        const qId = list.dataset.questionId;
-        const order = [];
-        items.forEach((item, index) => {
-            item.querySelector('.ordering-number').textContent = (index + 1) + '.';
-            item.querySelector('input[type="hidden"]').value = item.dataset.value;
-            order.push(item.dataset.value);
-        });
-        submitAnswer(qId, order);
-    });
-});
 </script>
 @endpush
 @endsection 

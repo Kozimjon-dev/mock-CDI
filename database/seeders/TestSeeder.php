@@ -92,7 +92,7 @@ class TestSeeder extends Seeder
             ['question_text' => 'Which day of the week is the Old Market closed?', 'type' => 'multiple_choice', 'options' => ['Monday', 'Tuesday', 'Wednesday', 'Sunday'], 'correct_answers' => ['Monday'], 'order' => 6],
             ['question_text' => 'The tour starts at what time?', 'type' => 'gap_filling', 'correct_answers' => ['10 AM', '10am', '10:00'], 'order' => 7],
             ['question_text' => 'What does the guide say about parking?', 'type' => 'multiple_choice', 'options' => ['It is free everywhere', 'It is expensive near the centre', 'There is no parking available', 'Only hotel guests can park'], 'correct_answers' => ['It is expensive near the centre'], 'order' => 8],
-            ['question_text' => 'Put the tour stops in the order the guide recommends.', 'type' => 'ordering', 'correct_answers' => ['The National Museum', 'The Royal Palace', 'The Old Market', 'The Clock Tower'], 'order' => 9],
+            ['question_text' => 'What is the main attraction at the Royal Palace?', 'type' => 'multiple_choice', 'options' => ['Beautiful gardens and fountains', 'Ancient ruins', 'Modern art gallery', 'Science museum'], 'correct_answers' => ['Beautiful gardens and fountains'], 'order' => 9],
             ['question_text' => 'The best time to visit the gardens is during _____.', 'type' => 'sentence_completion', 'options' => ['spring', 'summer', 'autumn', 'winter', 'morning'], 'correct_answers' => ['spring'], 'order' => 10],
         ];
 
@@ -122,7 +122,7 @@ class TestSeeder extends Seeder
             ['question_text' => 'The deadline for the first draft is _____.', 'type' => 'gap_filling', 'correct_answers' => ['March 20', '20 March', '20th March'], 'order' => 4],
             ['question_text' => 'What does Sarah think is the biggest challenge?', 'type' => 'multiple_choice', 'options' => ['Finding enough data', 'Meeting the word count', 'Getting access to journals', 'Agreeing on a focus'], 'correct_answers' => ['Finding enough data'], 'order' => 5],
             ['question_text' => 'The professor suggested they focus on _____ countries for their case studies.', 'type' => 'sentence_completion', 'options' => ['European', 'Asian', 'African', 'Scandinavian', 'South American'], 'correct_answers' => ['Scandinavian'], 'order' => 6],
-            ['question_text' => 'Which TWO sources do the students plan to use?', 'type' => 'select_options', 'options' => ['Government reports', 'Social media posts', 'Academic journals', 'Newspaper articles', 'Blog posts'], 'correct_answers' => ['Government reports', 'Academic journals'], 'order' => 7],
+            ['question_text' => 'Which TWO sources do the students plan to use?', 'type' => 'multiple_choice', 'options' => ['Government reports', 'Social media posts', 'Academic journals', 'Newspaper articles', 'Blog posts'], 'correct_answers' => ['Government reports', 'Academic journals'], 'order' => 7],
             ['question_text' => 'How long should the final presentation be?', 'type' => 'short_answer', 'correct_answers' => ['15 minutes', '15 mins', 'fifteen minutes'], 'order' => 8],
             ['question_text' => 'Tom suggests meeting _____ a week to discuss progress.', 'type' => 'gap_filling', 'correct_answers' => ['twice', '2 times'], 'order' => 9],
             ['question_text' => 'What does Maria recommend about the project introduction?', 'type' => 'multiple_choice', 'options' => ['Keep it short and general', 'Include detailed statistics', 'Start with a personal story', 'Use a famous quotation'], 'correct_answers' => ['Keep it short and general'], 'order' => 10],
@@ -208,7 +208,7 @@ class TestSeeder extends Seeder
         // Reading Part 1 — Renewable Energy (14 questions)
         $readingPart1 = [
             ['question_text' => 'What is the main advantage of solar energy mentioned in the passage?', 'type' => 'multiple_choice', 'options' => ['It is free', 'Cost has decreased', 'It works at night', 'It requires no maintenance'], 'correct_answers' => ['Cost has decreased'], 'order' => 1],
-            ['question_text' => 'Which countries are mentioned as leaders in solar energy investment?', 'type' => 'select_options', 'options' => ['Germany', 'China', 'United States', 'Japan', 'United Kingdom'], 'correct_answers' => ['Germany', 'China'], 'order' => 2],
+            ['question_text' => 'Which countries are mentioned as leaders in solar energy investment?', 'type' => 'multiple_choice', 'options' => ['Germany', 'China', 'United States', 'Japan', 'United Kingdom'], 'correct_answers' => ['Germany', 'China'], 'order' => 2],
             ['question_text' => 'Offshore wind farms capture stronger and more consistent winds.', 'type' => 'true_false_notgiven', 'correct_answers' => ['True'], 'order' => 3],
             ['question_text' => 'Denmark produces more wind energy than the United Kingdom.', 'type' => 'true_false_notgiven', 'correct_answers' => ['Not Given'], 'order' => 4],
             ['question_text' => 'Match each energy source with its key characteristic.', 'type' => 'matching', 'options' => ['Cost has decreased significantly', 'Uses turbines for electricity', 'One of the most reliable sources'], 'correct_answers' => ['Solar energy', 'Wind energy', 'Hydroelectric power'], 'order' => 5],
@@ -217,7 +217,7 @@ class TestSeeder extends Seeder
             ['question_text' => 'The renewable energy sector has created millions of _____ worldwide.', 'type' => 'sentence_completion', 'options' => ['jobs', 'problems', 'patents', 'machines', 'factories'], 'correct_answers' => ['jobs'], 'order' => 8],
             ['question_text' => 'The initial investment for renewable energy is always affordable.', 'type' => 'true_false_notgiven', 'correct_answers' => ['False'], 'order' => 9],
             ['question_text' => 'Long-term savings often _____ the initial costs of renewable energy.', 'type' => 'gap_filling', 'correct_answers' => ['offset'], 'order' => 10],
-            ['question_text' => 'Solar panels have become more accessible to which groups?', 'type' => 'select_options', 'options' => ['Homeowners', 'Governments', 'Businesses', 'Schools', 'Hospitals'], 'correct_answers' => ['Homeowners', 'Businesses'], 'order' => 11],
+            ['question_text' => 'Solar panels have become more accessible to which groups?', 'type' => 'multiple_choice', 'options' => ['Homeowners', 'Governments', 'Businesses', 'Schools', 'Hospitals'], 'correct_answers' => ['Homeowners', 'Businesses'], 'order' => 11],
             ['question_text' => 'Nuclear energy is discussed as an alternative in the passage.', 'type' => 'true_false_notgiven', 'correct_answers' => ['Not Given'], 'order' => 12],
             ['question_text' => 'The transition to renewable energy is described as both environmental and _____.', 'type' => 'gap_filling', 'correct_answers' => ['economic'], 'order' => 13],
         ];
@@ -255,7 +255,7 @@ class TestSeeder extends Seeder
             ['question_text' => 'The development of AI governance frameworks has become less important over time.', 'type' => 'true_false_notgiven', 'correct_answers' => ['False'], 'order' => 4],
             ['question_text' => 'Early AI systems in the 1950s were primarily _____ based.', 'type' => 'gap_filling', 'correct_answers' => ['rule'], 'order' => 5],
             ['question_text' => 'Match each decade with the key AI development.', 'type' => 'matching', 'options' => ['First neural networks', 'Expert systems', 'Deep learning revolution'], 'correct_answers' => ['1950s', '1980s-1990s', '2000s-present'], 'order' => 6],
-            ['question_text' => 'Which companies are mentioned as heavy investors in AI?', 'type' => 'select_options', 'options' => ['Google', 'Facebook', 'Tesla', 'Amazon', 'Apple'], 'correct_answers' => ['Google', 'Facebook', 'Tesla'], 'order' => 7],
+            ['question_text' => 'Which companies are mentioned as heavy investors in AI?', 'type' => 'multiple_choice', 'options' => ['Google', 'Facebook', 'Tesla', 'Amazon', 'Apple'], 'correct_answers' => ['Google', 'Facebook', 'Tesla'], 'order' => 7],
             ['question_text' => 'AI winter refers to a period of rapid technological advancement.', 'type' => 'true_false_notgiven', 'correct_answers' => ['False'], 'order' => 8],
             ['question_text' => 'In healthcare, AI assists in medical diagnosis and _____.', 'type' => 'gap_filling', 'correct_answers' => ['drug discovery'], 'order' => 9],
             ['question_text' => 'The future of AI involves augmented intelligence rather than _____ intelligence.', 'type' => 'gap_filling', 'correct_answers' => ['artificial'], 'order' => 10],

@@ -140,7 +140,9 @@
                                     <h3 class="text-lg font-medium">Question {{ ($part - 1) * 10 + $loop->iteration }}</h3>
                                     <span class="text-sm text-gray-400">{{ $question->points }} point(s)</span>
                                 </div>
+                                @if(!$question->isSentenceCompletion())
                                 <p class="text-gray-300 mt-2">{{ $question->question_text }}</p>
+                                @endif
                             </div>
 
                             <div class="question-options">
@@ -215,7 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAudioPlayers();
     setupAntiCheating();
     startHeartbeat();
-    initializeOrderingDragDrop();
 });
 
 function initializeFullscreen() {
@@ -486,39 +487,6 @@ function updateAnsweredCount() {
     document.getElementById('answered-count').textContent = count;
 }
 
-// Ordering drag-and-drop
-function initializeOrderingDragDrop() {
-    document.querySelectorAll('.ordering-list').forEach(list => {
-        let draggedItem = null;
-        list.addEventListener('dragstart', function(e) {
-            draggedItem = e.target.closest('.ordering-item');
-            if (draggedItem) { draggedItem.style.opacity = '0.5'; e.dataTransfer.effectAllowed = 'move'; }
-        });
-        list.addEventListener('dragend', function() { if (draggedItem) { draggedItem.style.opacity = '1'; draggedItem = null; } });
-        list.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            const target = e.target.closest('.ordering-item');
-            if (target && target !== draggedItem) {
-                const rect = target.getBoundingClientRect();
-                if (e.clientY < rect.top + rect.height / 2) list.insertBefore(draggedItem, target);
-                else list.insertBefore(draggedItem, target.nextSibling);
-            }
-        });
-        list.addEventListener('drop', function(e) {
-            e.preventDefault();
-            const items = list.querySelectorAll('.ordering-item');
-            const qId = list.dataset.questionId;
-            const order = [];
-            items.forEach((item, i) => {
-                item.querySelector('.ordering-number').textContent = (i + 1) + '.';
-                item.querySelector('input[type="hidden"]').value = item.dataset.value;
-                order.push(item.dataset.value);
-            });
-            submitAnswer(qId, order);
-            updateAnsweredCount();
-        });
-    });
-}
 </script>
 @endpush
 @endsection
