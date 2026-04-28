@@ -27,11 +27,18 @@ mkdir -p /var/www/html/storage/framework/{sessions,views,cache}
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Run migrations and seed
+# Run migrations
 echo "Running migrations..."
 php artisan migrate --force
-echo "Running seeds..."
-php artisan db:seed --force
+
+# Only seed if the users table is empty (fresh database)
+USER_COUNT=$(php artisan tinker --execute="echo \App\Models\User::count();" 2>/dev/null | tail -1)
+if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
+    echo "Fresh database detected, running seeds..."
+    php artisan db:seed --force
+else
+    echo "Database already seeded, skipping..."
+fi
 
 # Cache for performance
 echo "Caching config and routes..."
