@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Test;
+use App\Models\TestSession;
+use App\Models\Student;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -10,7 +12,11 @@ class HomeController extends Controller
     public function index()
     {
         $publishedTests = Test::published()->latest()->get();
-        return view('home', compact('publishedTests'));
+        $totalTests = $publishedTests->count();
+        $totalStudents = Student::count();
+        $completedSessions = TestSession::whereNotNull('completed_at')->count();
+
+        return view('home', compact('publishedTests', 'totalTests', 'totalStudents', 'completedSessions'));
     }
 
     public function tests()

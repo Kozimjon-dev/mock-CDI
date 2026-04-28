@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\TestSession;
+use App\Models\Student;
 use App\Models\StudentResponse;
 use App\Models\WritingResponse;
 use Illuminate\Http\Request;
@@ -18,34 +19,71 @@ class SessionController extends Controller
             ->firstOrFail();
 
         if ($session->isCompleted()) {
-            $test = $session->test;
+            $scores = $session->getModuleScores();
+            $badges = $this->calculateBadges($session, $scores);
 
-            $scores = [
-                'listening' => [
-                    'correct' => StudentResponse::where('student_id', $session->student_id)
-                        ->where('test_id', $session->test_id)
-                        ->where('module', 'listening')
-                        ->where('is_correct', true)->count(),
-                    'total' => $test->listeningQuestions()->count(),
-                ],
-                'reading' => [
-                    'correct' => StudentResponse::where('student_id', $session->student_id)
-                        ->where('test_id', $session->test_id)
-                        ->where('module', 'reading')
-                        ->where('is_correct', true)->count(),
-                    'total' => $test->readingQuestions()->count(),
-                ],
-            ];
-
-            $scores['overall'] = [
-                'correct' => $scores['listening']['correct'] + $scores['reading']['correct'],
-                'total' => $scores['listening']['total'] + $scores['reading']['total'],
-            ];
-
-            return view('student.completed', compact('session', 'scores'));
+            return view('student.completed', compact('session', 'scores', 'badges'));
         }
 
         return view('student.dashboard', compact('session'));
+    }
+
+    public function history(Request $request)
+    {
+        $phone = $request->query('phone');
+        $sessions = collect();
+        $student = null;
+
+        if ($phone) {
+            $student = Student::where('phone_number', $phone)->first();
+
+            if ($student) {
+                $sessions = TestSession::where('student_id', $student->id)
+                    ->whereNotNull('completed_at')
+                    ->with('test')
+                    ->orderBy('completed_at', 'desc')
+                    ->get();
+
+                // Calculate band scores for each session
+                $sessions->each(function ($session) {
+                    $session->module_scores = $session->getModuleScores();
+                });
+            }
+        }
+
+        return view('student.history', compact('phone', 'student', 'sessions'));
+    }
+
+    public function review(string $sessionToken)
+    {
+        $session = TestSession::where('session_token', $sessionToken)
+            ->with(['student', 'test'])
+            ->firstOrFail();
+
+        if (!$session->isCompleted()) {
+            return redirect()->route('student.session.show', $sessionToken);
+        }
+
+        $test = $session->test;
+        $scores = $session->getModuleScores();
+
+        // Get all student responses keyed by question_id
+        $responses = StudentResponse::where('student_id', $session->student_id)
+            ->where('test_id', $session->test_id)
+            ->get()
+            ->keyBy('question_id');
+
+        // Get questions grouped by module
+        $listeningQuestions = $test->listeningQuestions()->get();
+        $readingQuestions = $test->readingQuestions()->get();
+
+        // Get writing responses
+        $writingResponses = $session->writingResponses()->get()->keyBy('task');
+
+        return view('student.review', compact(
+            'session', 'scores', 'responses',
+            'listeningQuestions', 'readingQuestions', 'writingResponses'
+        ));
     }
 
     public function listening(string $sessionToken)
@@ -233,6 +271,60 @@ class SessionController extends Controller
         $this->checkForCheating($request, $session);
 
         return response()->json(['success' => true]);
+    }
+
+    private function calculateBadges(TestSession $session, array $scores): array
+    {
+        $badges = [];
+        $studentId = $session->student_id;
+
+        // Get all completed sessions for this student
+        $allSessions = TestSession::where('student_id', $studentId)
+            ->whereNotNull('completed_at')
+            ->orderBy('completed_at', 'asc')
+            ->get();
+
+        $sessionCount = $allSessions->count();
+
+        // First Test
+        if ($sessionCount >= 1) {
+            $badges[] = ['icon' => '🎯', 'name' => 'First Test', 'color' => 'blue'];
+        }
+
+        // Consistent (3+ tests)
+        if ($sessionCount >= 3) {
+            $badges[] = ['icon' => '🔁', 'name' => 'Consistent', 'color' => 'purple'];
+        }
+
+        // Band 6+ / Band 7+
+        $overallBand = $scores['overall']['band'];
+        if ($overallBand >= 6.0) {
+            $badges[] = ['icon' => '⭐', 'name' => 'Band 6+', 'color' => 'yellow'];
+        }
+        if ($overallBand >= 7.0) {
+            $badges[] = ['icon' => '🏆', 'name' => 'Band 7+', 'color' => 'amber'];
+        }
+
+        // Perfect Listener / Reader
+        if ($scores['listening']['total'] > 0 && $scores['listening']['correct'] === $scores['listening']['total']) {
+            $badges[] = ['icon' => '🎧', 'name' => 'Perfect Listener', 'color' => 'green'];
+        }
+        if ($scores['reading']['total'] > 0 && $scores['reading']['correct'] === $scores['reading']['total']) {
+            $badges[] = ['icon' => '📖', 'name' => 'Perfect Reader', 'color' => 'green'];
+        }
+
+        // Improving (latest band > first band)
+        if ($sessionCount >= 2) {
+            $firstSession = $allSessions->first();
+            $latestSession = $allSessions->last();
+            $firstBand = $firstSession->getOverallBandScore();
+            $latestBand = $latestSession->getOverallBandScore();
+            if ($latestBand > $firstBand) {
+                $badges[] = ['icon' => '📈', 'name' => 'Improving', 'color' => 'indigo'];
+            }
+        }
+
+        return $badges;
     }
 
     private function getSession(string $sessionToken): TestSession

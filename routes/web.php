@@ -19,9 +19,13 @@ Route::prefix('student')->name('student.')->group(function () {
     Route::get('/register/{test}', [StudentTestController::class, 'register'])->name('register');
     Route::post('/register/{test}', [StudentTestController::class, 'storeRegistration'])->name('store-registration');
 
+    // History (phone number lookup)
+    Route::get('/history', [StudentSessionController::class, 'history'])->name('history');
+
     // Test session routes (protected by session token)
     Route::prefix('session')->name('session.')->group(function () {
         Route::get('/{sessionToken}', [StudentSessionController::class, 'show'])->name('show');
+        Route::get('/{sessionToken}/review', [StudentSessionController::class, 'review'])->name('review');
         Route::get('/{sessionToken}/listening', [StudentSessionController::class, 'listening'])->name('listening');
         Route::get('/{sessionToken}/reading', [StudentSessionController::class, 'reading'])->name('reading');
         Route::get('/{sessionToken}/writing', [StudentSessionController::class, 'writing'])->name('writing');
